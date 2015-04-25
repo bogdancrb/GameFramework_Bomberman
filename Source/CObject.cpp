@@ -26,7 +26,7 @@ CObject::CObject(const BackBuffer *pBackBuffer)
 
 		itoa(crateNR,nr,10);
 
-		strcpy(img,"data/crates/crate"); strcat(img,nr); strcat(img,"AndMask.bmp");
+		strcpy(img,"data/objects/crate"); strcat(img,nr); strcat(img,"AndMask.bmp");
 	}
 	else
 	{
@@ -34,7 +34,7 @@ CObject::CObject(const BackBuffer *pBackBuffer)
 
 		itoa(crateCount,nr,10);
 
-		strcpy(img,"data/crates/crateAndMask"); strcat(img,nr); strcat(img,".bmp");
+		strcpy(img,"data/objects/crateAndMask"); strcat(img,nr); strcat(img,".bmp");
 
 		crateCount++;
 	}

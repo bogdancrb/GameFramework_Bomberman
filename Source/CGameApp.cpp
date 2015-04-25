@@ -82,7 +82,7 @@ bool CGameApp::InitInstance( LPCTSTR lpCmdLine, int iCmdShow )
 //-----------------------------------------------------------------------------
 bool CGameApp::CreateDisplay()
 {
-	LPTSTR			WindowTitle		= _T("GameFramework");
+	LPTSTR			WindowTitle		= _T("Bomberman");
 	LPCSTR			WindowClass		= _T("GameFramework_Class");
 	//USHORT			Width			= 800;
 	//USHORT			Height			= 600;
@@ -325,7 +325,7 @@ bool CGameApp::BuildObjects()
 		m_pNPC[index] = new CNonPlayer(m_pBBuffer,1);
 	}
 	
-	if(!m_imgBackground.LoadBitmapFromFile("data/background/background2.bmp", GetDC(m_hWnd)))
+	if(!m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd)))
 		return false;
 
 	// Success!

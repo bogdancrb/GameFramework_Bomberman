@@ -21,7 +21,7 @@ CPlayer::CPlayer(const BackBuffer *pBackBuffer, int ID)
 	//m_pSprite = new Sprite("data/planeimg.bmp", "data/planemask.bmp");
 	if (ID == 1)
 	{
-		m_pSprite = new Sprite("data/ships/ship1AndMask.bmp", RGB(0xff,0x00,0xff));
+		m_pSprite = new Sprite("data/characters/player.bmp", RGB(0xff,0x00,0xff));
 	}
 	if (ID == 2)
 	{
@@ -39,7 +39,7 @@ CPlayer::CPlayer(const BackBuffer *pBackBuffer, int ID)
 	r.right = 64;
 	r.bottom = 64;
 
-	m_pExplosionSprite	= new AnimatedSprite("data/explosions/explosion2.bmp", "data/explosions/explosionmask2.bmp", r, 25);
+	m_pExplosionSprite	= new AnimatedSprite("data/explosions/explosion.bmp", "data/explosions/explosionmask.bmp", r, 25);
 	//m_pExplosionSprite	= new AnimatedSprite("data/explosionandmask.bmp", RGB(0xff,0x00,0xff), r, 16);
 	m_pExplosionSprite->setBackBuffer(pBackBuffer);
 	m_bExplosion		= false;
@@ -129,25 +129,25 @@ void CPlayer::Move(ULONG ulDirection, int ID)
 	{
 		if( ulDirection & CPlayer::DIR_LEFT )
 		{
-			if (ID == 1 && strcmp(m_pSprite->fileName,"data/ships/ship1AndMaskLeft.bmp") != 0) // pentru a evita pierderi de fps
+			if (ID == 1 && strcmp(m_pSprite->fileName,"data/characters/player.bmp") != 0) // pentru a evita pierderi de fps
 			{
-				m_pSprite->LoadSprite("data/ships/ship1AndMaskLeft.bmp", RGB(0xff,0x00,0xff));
+				m_pSprite->LoadSprite("data/characters/player.bmp", RGB(0xff,0x00,0xff));
 			}
 			m_pSprite->mVelocity.x -= .8;
 		}
-		else if (strcmp(m_pSprite->fileName,"data/ships/ship1AndMaskLeft.bmp") == 0 || strcmp(m_pSprite->fileName,"data/ships/ship1AndMaskRight.bmp") == 0) // pentru a evita ships de fps si pentru a revnii la pozitia normala
+		else if (strcmp(m_pSprite->fileName,"data/characters/player.bmp") == 0 || strcmp(m_pSprite->fileName,"data/characters/player.bmp") == 0) // pentru a evita ships de fps si pentru a revnii la pozitia normala
 		{
 			if (ID == 1)
 			{
-				m_pSprite->LoadSprite("data/ships/ship1AndMask.bmp", RGB(0xff,0x00,0xff));
+				m_pSprite->LoadSprite("data/characters/player.bmp", RGB(0xff,0x00,0xff));
 			}
 		}
 
 		if( ulDirection & CPlayer::DIR_RIGHT )
 		{
-			if (ID == 1 && strcmp(m_pSprite->fileName,"data/ships/ship1AndMaskRight.bmp") != 0) // pentru a evita pierderi de fps
+			if (ID == 1 && strcmp(m_pSprite->fileName,"data/characters/player.bmp") != 0) // pentru a evita pierderi de fps
 			{
-				m_pSprite->LoadSprite("data/ships/ship1AndMaskRight.bmp", RGB(0xff,0x00,0xff));
+				m_pSprite->LoadSprite("data/characters/player.bmp", RGB(0xff,0x00,0xff));
 			}
 			m_pSprite->mVelocity.x += .8;
 		}

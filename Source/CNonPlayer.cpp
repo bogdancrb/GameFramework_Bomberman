@@ -21,7 +21,7 @@ CNonPlayer::CNonPlayer(const BackBuffer *pBackBuffer, int ID)
 	//m_pSprite = new Sprite("data/planeimg.bmp", "data/planemask.bmp");
 	if (ID == 1)
 	{
-		m_pNPCSprite = new Sprite("data/ships/enemyship1AndMask.bmp", RGB(0xff,0x00,0xff));
+		m_pNPCSprite = new Sprite("data/characters/enemy.bmp", RGB(0xff,0x00,0xff));
 	}
 	if (ID == 2)
 	{
@@ -39,7 +39,7 @@ CNonPlayer::CNonPlayer(const BackBuffer *pBackBuffer, int ID)
 	r.right = 64;
 	r.bottom = 64;
 
-	m_pNPCExplosionSprite	= new AnimatedSprite("data/explosions/explosion2.bmp", "data/explosions/explosionmask2.bmp", r, 25);
+	m_pNPCExplosionSprite	= new AnimatedSprite("data/explosions/explosion.bmp", "data/explosions/explosionmask.bmp", r, 25);
 	//m_pExplosionSprite	= new AnimatedSprite("data/explosionandmask.bmp", RGB(0xff,0x00,0xff), r, 16);
 	m_pNPCExplosionSprite->setBackBuffer(pBackBuffer);
 	m_bNPCExplosion		= false;
