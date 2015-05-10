@@ -1,0 +1,2 @@
+- la portale sa te teleporteze la nivele pentru puncte bonus, spre exemplu unde cad obiecte din cer si daca arunci cu grenazi in ele sa primesti puncte (sau sa intrii in ele?)
+- la usi random sa fie: boss fight, puncte bonus, penalizare puncte, -1 viata, nimic, super bombe
