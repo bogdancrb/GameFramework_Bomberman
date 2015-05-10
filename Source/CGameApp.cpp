@@ -12,6 +12,7 @@
 #include "CGameApp.h"
 
 extern HINSTANCE g_hInst;
+float PlayerOldPosX, PlayerOldPosY;
 
 //-----------------------------------------------------------------------------
 // CGameApp Member Functions
@@ -28,18 +29,8 @@ CGameApp::CGameApp()
 	m_hMenu			= NULL;
 	m_pBBuffer		= NULL;
 	m_pPlayer		= NULL;
-	m_pBullet		= NULL;
+	m_Map           = NULL;
 	m_LastFrameRate = 0;
-
-	for (int index = 0; index < MAX_CRATE; index++)
-	{
-		m_pCrate[index] = NULL;
-	}
-
-	for (int index = 0; index < MAX_NPCS; index++)
-	{
-		m_pNPC[index] = NULL;
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -84,14 +75,13 @@ bool CGameApp::CreateDisplay()
 {
 	LPTSTR			WindowTitle		= _T("Bomberman");
 	LPCSTR			WindowClass		= _T("GameFramework_Class");
-	//USHORT			Width			= 800;
-	//USHORT			Height			= 600;
+	USHORT			Width;
+	USHORT			Height;
 	RECT			rc;
 	WNDCLASSEX		wcex;
+	HMONITOR		hmon;
+	MONITORINFO		m_inf = { sizeof(m_inf) };
 	MSG msg;
-
-	ZeroMemory(&msg, sizeof(MSG));
-    g_hInst = GetModuleHandle(NULL);
 
 	wcex.cbSize			= sizeof(WNDCLASSEX);
 	wcex.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -116,7 +106,15 @@ bool CGameApp::CreateDisplay()
 	m_nViewWidth	= rc.right - rc.left;
 	m_nViewHeight	= rc.bottom - rc.top;
 
-	m_hWnd = CreateWindow(WindowClass, WindowTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, (int)GetSystemMetrics(SM_CXSCREEN), (int)GetSystemMetrics(SM_CYSCREEN), NULL, NULL, g_hInst, this);
+	hmon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+	GetMonitorInfo(hmon, &m_inf);
+
+	Width = m_inf.rcMonitor.right;
+	Height = m_inf.rcMonitor.bottom;
+
+	m_hWnd = CreateWindow(WindowClass, WindowTitle, WS_POPUP | WS_VISIBLE,
+		m_inf.rcMonitor.left, m_inf.rcMonitor.top, m_inf.rcMonitor.right - m_inf.rcMonitor.left,
+		m_inf.rcMonitor.bottom - m_inf.rcMonitor.top, NULL, NULL, g_hInst, this);
 
 	if (!m_hWnd)
 		return false;
@@ -271,7 +269,6 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 			case VK_RETURN:
 				fTimer = SetTimer(m_hWnd, 1, EXPLOSION_TIME, NULL);
 				m_pPlayer->Explode(1);
-				m_pBullet->Explode();
 				break;
 			case VK_F1:
 				if (F1Pressed)
@@ -288,11 +285,6 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 			case 1:
 				if(!m_pPlayer->AdvanceExplosion())
 					KillTimer(m_hWnd, 1);
-				for (int index = 0; index < MAX_NPCS; index++)
-				{
-					if(!m_pNPC[index]->NPCAdvanceExplosion())
-						KillTimer(m_hWnd, 1);
-				}
 			}
 			break;
 
@@ -315,15 +307,7 @@ bool CGameApp::BuildObjects()
 {
 	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight);
 	m_pPlayer = new CPlayer(m_pBBuffer,1);
-	m_pBullet = new CPlayer(m_pBBuffer,2);
-	for (int index = 0; index < MAX_CRATE; index++)
-	{
-		m_pCrate[index] = new CObject(m_pBBuffer);
-	}
-	for (int index = 0; index < MAX_NPCS; index++)
-	{
-		m_pNPC[index] = new CNonPlayer(m_pBBuffer,1);
-	}
+	m_Map = new CMap("data/map1.txt", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 	
 	if(!m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd)))
 		return false;
@@ -338,17 +322,7 @@ bool CGameApp::BuildObjects()
 //-----------------------------------------------------------------------------
 void CGameApp::SetupGameState()
 {
-	m_pPlayer->Position() = Vec2((int)GetSystemMetrics(SM_CXSCREEN)-700, (int)GetSystemMetrics(SM_CYSCREEN)-200);
-
-	for (int index = 0; index < MAX_CRATE; index++)
-	{
-		m_pCrate[index]->StartMoving();
-	}
-
-	for (int index = 0; index < MAX_NPCS; index++)
-	{
-		m_pNPC[index]->StartMoving();
-	}
+	m_pPlayer->Position() = Vec2(690, 390);
 }
 
 //-----------------------------------------------------------------------------
@@ -368,32 +342,6 @@ void CGameApp::ReleaseObjects( )
 	{
 		delete m_pBBuffer;
 		m_pBBuffer = NULL;
-	}
-
-	if(m_pBullet != NULL)
-	{
-		delete m_pBullet;
-		m_pBullet = NULL;
-	}
-
-	if (m_pCrate != NULL)
-	{
-		delete[] *m_pCrate;
-		
-		for (int index = 0; index < MAX_CRATE; index++)
-		{
-			m_pCrate[index] = NULL;
-		}
-	}
-
-	if (m_pNPC != NULL)
-	{
-		delete[] *m_pNPC;
-		
-		for (int index = 0; index < MAX_NPCS; index++)
-		{
-			m_pNPC[index] = NULL;
-		}
 	}
 }
 
@@ -415,11 +363,11 @@ void CGameApp::FrameAdvance()
 	// Animate the game objects
 	AnimateObjects();
 
+	// Detecteaza coliziune jucator - ziduri
+	m_Map->Colision(m_pPlayer, m_pPlayer->PlayerOldPos());
+	
 	// Drawing the game objects
 	DrawObjects();
-
-	// Detect object colision
-	Colision();
 }
 
 //-----------------------------------------------------------------------------
@@ -432,6 +380,7 @@ void CGameApp::ProcessInput( )
 	ULONG		Direction = 0;
 	POINT		CursorPos;
 	float		X = 0.0f, Y = 0.0f;
+	static int	Timer; // Cronometru folosit pentru a reduce viteza de deplasare a jucatorului
 
 	// Retrieve keyboard state
 	if ( !GetKeyboardState( pKeyBuffer ) ) return;
@@ -440,28 +389,36 @@ void CGameApp::ProcessInput( )
 	if ( pKeyBuffer[ VK_UP ] & 0xF0 )
 	{
 		Direction |= CPlayer::DIR_FORWARD;
+		Timer++;
 	}
-	if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
+	else if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
 	{
 		Direction |= CPlayer::DIR_BACKWARD;
+		Timer++;
 	}
-	if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
+	else if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
 	{
 		Direction |= CPlayer::DIR_LEFT;
+		Timer++;
 	}
-	if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
+	else if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
 	{
 		Direction |= CPlayer::DIR_RIGHT;
+		Timer++;
 	}
 
-	if ( pKeyBuffer[ VK_SPACE ] & 0xF0 )
+	if (Timer == PLAYER_SPEED) // Daca cronometrul a ajuns egal cu viteza dorita
 	{
-		m_pBullet->Fire();
-	}
+		// Memoram vechea pozitie a jucatorului, pentru a folosii mai apoi in coliziuni
+		m_pPlayer->PlayerOldPos().x = m_pPlayer->Position().x;
+		m_pPlayer->PlayerOldPos().y = m_pPlayer->Position().y;
 
-	// Move the player
-	m_pPlayer->Move(Direction,1);
-	m_pBullet->Move(Direction,2);
+		// Deplasam jucatorul
+		m_pPlayer->Move(Direction,1);
+
+		// Resetam cronometrul
+		Timer = 0;
+	}
 
 	// Now process the mouse (if the button is pressed)
 	if ( GetCapture() == m_hWnd )
@@ -485,17 +442,6 @@ void CGameApp::ProcessInput( )
 void CGameApp::AnimateObjects()
 {
 	m_pPlayer->Update(m_Timer.GetTimeElapsed(),1);
-	m_pBullet->Update(m_Timer.GetTimeElapsed(),2);
-
-	for (int index = 0; index < MAX_CRATE; index++)
-	{
-		m_pCrate[index]->UpdateObj(m_Timer.GetTimeElapsed(),3);
-	}
-
-	for (int index = 0; index < MAX_NPCS; index++)
-	{
-		m_pNPC[index]->UpdateNPC(m_Timer.GetTimeElapsed(),3);
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -510,23 +456,7 @@ void CGameApp::DrawObjects()
 
 	m_pPlayer->Draw();
 
-	m_pBullet->Draw();
-
-	for (int index = 0; index < MAX_NPCS; index++)
-	{
-		if (m_pNPC[index]->Visible())
-		{
-			m_pNPC[index]->DrawNPC();
-		}
-	}
-
-	for (int index = 0; index < MAX_CRATE; index++)
-	{
-		if (m_pCrate[index]->Visible())
-		{
-			m_pCrate[index]->DrawObj();
-		}
-	}
+	m_Map->Draw(0,0); // Desenare harta
 
 	DrawInfo();
 
@@ -547,7 +477,7 @@ void CGameApp::DrawInfo()
 	static TCHAR PlayerVelocity[255];
 	char ToString[255] = {0};
 
-	if (F1Pressed)
+	if (F1Pressed) // Daca s-a apasat F1 atunci afisam niste date tehnice pe ecran
 	{
 		//draw framerate on buffer
 		m_Timer.GetFrameRate(FrameRate, 50);
@@ -570,7 +500,7 @@ void CGameApp::DrawInfo()
 		TextOut(m_pBBuffer->getDC(), 10, 70, PlayerVelocity, strlen(PlayerVelocity));
 	}
 
-	strcpy(PlayerPoints,"Puncte: ");
+	/*strcpy(PlayerPoints,"Puncte: ");
 	itoa(m_pPlayer->m_pPoints,ToString,10);
 	strcat(PlayerPoints,ToString);
 	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-100, GetSystemMetrics(SM_CYSCREEN)-100, PlayerPoints, strlen(PlayerPoints));
@@ -578,50 +508,5 @@ void CGameApp::DrawInfo()
 	strcpy(PlayerHealth,"Viata: ");
 	itoa(m_pPlayer->m_pHealth,ToString,10);
 	strcat(PlayerHealth,ToString);
-	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-200, GetSystemMetrics(SM_CYSCREEN)-100, PlayerHealth, strlen(PlayerHealth));
-}
-
-//-----------------------------------------------------------------------------
-// Name : Colision () (Private)
-// Desc : Detects the objects colision
-//-----------------------------------------------------------------------------
-void CGameApp::Colision()
-{
-	for (int index = 0; index < MAX_CRATE; index++)
-	{
-		if( ((abs(m_pBullet->Position().x - m_pCrate[index]->ObjPosition().x) < 20 && abs(m_pCrate[index]->ObjPosition().y - m_pBullet->Position().y) < 20) && m_pCrate[index]->Visible()) && m_pBullet->Position() != m_pPlayer->Position()) // coliziune bullet - crate
-		{
-			m_pCrate[index]->ObjExplode();
-			m_pBullet->Position() = m_pPlayer->Position();
-			m_pBullet->Velocity() = m_pPlayer->Velocity();
-		}
-
-		if( ((abs(m_pPlayer->Position().x - m_pCrate[index]->ObjPosition().x) < 60 && abs(m_pCrate[index]->ObjPosition().y - m_pPlayer->Position().y) < 60) && m_pCrate[index]->Visible())) // coliziune avion - crate
-		{
-			m_pPlayer->m_pPoints += rand() % 10 + 1;
-			m_pCrate[index]->ObjExplode();
-		}
-	}
-
-	for (int index = 0; index < MAX_NPCS; index++)
-	{
-		if( ((abs(m_pBullet->Position().x - m_pNPC[index]->NPCPosition().x) < 100 && abs(m_pNPC[index]->NPCPosition().y - m_pBullet->Position().y) < 100) && m_pNPC[index]->Visible()) && m_pBullet->Position() != m_pPlayer->Position()) // coliziune bullet - npc
-		{
-			m_pNPC[index]->m_pNPCHealth -= rand() % 10 + 5;
-			if (m_pNPC[index]->m_pNPCHealth <= 0)
-			{
-				m_pNPC[index]->NPCExplode(1);
-				m_pNPC[index]->m_pNPCHealth = 100;
-				m_pPlayer->m_pPoints += rand() % 10 + 1;
-			}
-			m_pBullet->Position() = m_pPlayer->Position();
-			m_pBullet->Velocity() = m_pPlayer->Velocity();
-		}
-
-		if( ((abs(m_pPlayer->Position().x - m_pNPC[index]->NPCPosition().x) < 60 && abs(m_pNPC[index]->NPCPosition().y - m_pPlayer->Position().y) < 60) && m_pNPC[index]->Visible())) // coliziune avion - npc
-		{
-			m_pPlayer->Explode(1);
-			m_pNPC[index]->NPCExplode(1);
-		}
-	}
+	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-200, GetSystemMetrics(SM_CYSCREEN)-100, PlayerHealth, strlen(PlayerHealth));*/
 }

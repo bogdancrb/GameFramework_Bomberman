@@ -39,5 +39,7 @@
 #define MAX_NPCS 10
 #define BULLET_SPEED 50
 #define EXPLOSION_TIME 40
+#define	PLAYER_SPEED 20 // Viteza de deplasare a jucatorului
+#define BLOCKSIZE 60 // Marimea unui block in pixeli (60x60)
 
 #endif // _MAIN_H_

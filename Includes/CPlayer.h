@@ -31,6 +31,7 @@ public:
 	//-------------------------------------------------------------------------
 	enum DIRECTION 
 	{ 
+		DIR_NONE	= 0,
 		DIR_FORWARD	 = 1, 
 		DIR_BACKWARD	= 2, 
 		DIR_LEFT		= 4, 
@@ -52,17 +53,18 @@ public:
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					Update( float dt , int ID);
+	void					Update(float dt, int ID);
 	void					Draw();
-	void					Move(ULONG ulDirection,int ID);
+	void					Move(ULONG ulDirection, int ID = 0);
 	Vec2&					Position();
+	Vec2&					PlayerOldPos(); // Pentru a accaesa pozitia veche a jucatorului
 	Vec2&					Velocity();
-	int						Width();
-	int						Height();
 
 	void					Explode(int ID = 0);
 	bool					AdvanceExplosion();
-	void					Fire();
+
+	int						Width() { return m_pSprite->width(); }
+	int						Height() { return m_pSprite->height(); }
 
 private:
 	//-------------------------------------------------------------------------
@@ -80,8 +82,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
-	int						m_pPoints;
-	int						m_pHealth;
+	//int						m_pPoints;
+	//int						m_pHealth;
 };
 
 #endif // _CPLAYER_H_

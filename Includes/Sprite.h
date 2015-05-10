@@ -30,6 +30,7 @@ public:
 	// modified externally frequently.
 	Vec2		mPosition;
 	Vec2		mVelocity;
+	Vec2		PlayerOldPos;	// Memoram vechea pozitie a jucatorului
 
 	char		fileName[255];
 	bool		isSpriteVisible;

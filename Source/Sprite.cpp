@@ -71,65 +71,6 @@ void Sprite::update(float dt, int ID)
 	// Update the sprites position.
 
 	mPosition += mVelocity * dt; // Update bounding rectangle/circle
-
-	if (ID == 1) // avion
-	{
-		PlayerPos = Vec2(mPosition.x,mPosition.y);
-		PlayerVel = Vec2(mVelocity.x,mVelocity.y);
-
-		if (mPosition.x <= 0) // limita stanga
-		{
-			mPosition.x = 0;
-			mVelocity.x = 0;
-		}
-		if (mPosition.x >= GetSystemMetrics(SM_CXSCREEN)) // limita dreapta
-		{
-			mPosition.x = GetSystemMetrics(SM_CXSCREEN);
-			mVelocity.x = 0;
-		}
-		if (mPosition.y <= GetSystemMetrics(SM_CYSCREEN)-750 /*sau cu 60?*/) // limita sus
-		{
-			mPosition.y = GetSystemMetrics(SM_CYSCREEN)-750; //sau cu 60?
-			mVelocity.y = 0;
-		}
-		if (mPosition.y >= GetSystemMetrics(SM_CYSCREEN)-100) // limita jos
-		{
-			mPosition.y = GetSystemMetrics(SM_CYSCREEN)-100;
-			mVelocity.y = 0;
-		}
-	}
-
-	if (ID == 2) // bullet
-	{
-		if (mPosition.x <= 0 || mPosition.x >= GetSystemMetrics(SM_CXSCREEN)) // limita bullet stanga/dreapta
-		{
-			mPosition.x = PlayerPos.x;
-			mVelocity.x = PlayerVel.x;
-		}
-		if (mPosition.y <= 0 || mPosition.y >= GetSystemMetrics(SM_CYSCREEN)) // limita bullet sus/jos
-		{
-			mPosition.y = PlayerPos.y;
-			mVelocity.y = PlayerVel.y;
-		}
-		
-	}
-
-	if (ID == 3) // crate
-	{
-		if (mPosition.y >= GetSystemMetrics(SM_CYSCREEN)) // limita jos
-		{
-			mPosition.y = -(rand() % 400 + 100);
-			mPosition.x = rand() % GetSystemMetrics(SM_CXSCREEN) + 1;
-			mVelocity.y = rand() % 50 + 30;
-
-			int chose = rand() % 3 + 1;
-
-			if (chose == 2)
-				isSpriteVisible = true;
-			else
-				isSpriteVisible = false;
-		}
-	}
 }
 
 void Sprite::setBackBuffer(const BackBuffer *pBackBuffer)

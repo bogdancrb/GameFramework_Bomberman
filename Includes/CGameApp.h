@@ -15,10 +15,11 @@
 #include "Main.h"
 #include "CTimer.h"
 #include "CPlayer.h"
-#include "CObject.h"
-#include "CNonPlayer.h"
+//#include "CObject.h"
+//#include "CNonPlayer.h"
 #include "BackBuffer.h"
 #include "ImageFile.h"
+#include "CMap.h"
 
 //-----------------------------------------------------------------------------
 // Forward Declarations
@@ -63,7 +64,6 @@ private:
 	void		DrawObjects	   ( );
 	void		DrawInfo		( );
 	void		ProcessInput	  ( );
-	void		Colision		( );
 
 	//-------------------------------------------------------------------------
 	// Private Static Functions For This Class
@@ -94,13 +94,9 @@ private:
 
 	BackBuffer*				m_pBBuffer;
 	CPlayer*				m_pPlayer;
-	CPlayer*				m_pBullet;
-
-	CObject*				m_pCrate[MAX_CRATE];
-
-	CNonPlayer*				m_pNPC[MAX_NPCS];
-
-	bool					F1Pressed;		// Used for drawing info about fps etc.
+	CMap*					m_Map;	// Harta cu tot cu obiecte si coliziuni
+	
+	bool					F1Pressed;		// Pentru a putea desena pe ecran informatii precum FPS, etc.
 };
 
 #endif // _CGAMEAPP_H_
