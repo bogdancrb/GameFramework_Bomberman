@@ -29,8 +29,9 @@ public:
 	// Keep these public because they need to be
 	// modified externally frequently.
 	Vec2		mPosition;
-	Vec2		mVelocity;
+	Vec2		PlayerDecalPos;	// Memoram pozitia jucatorului, decalata cu +/- BLOCKSIZE
 	Vec2		PlayerOldPos;	// Memoram vechea pozitie a jucatorului
+	Vec2		mVelocity;
 
 	char		fileName[255];
 	bool		isSpriteVisible;

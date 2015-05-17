@@ -1,16 +1,14 @@
 //-----------------------------------------------------------------------------
-// File: Map.cpp
+// File: CMap.cpp
 //
 // Desc: Map loading and colisions
 //
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Map Specific Includes
+// CMap Specific Includes
 //-----------------------------------------------------------------------------
 #include "CMap.h"
-
-using namespace std;
 
 CMap::CMap(const char* FileName, BackBuffer * Buffer)
 {
@@ -20,25 +18,25 @@ CMap::CMap(const char* FileName, BackBuffer * Buffer)
 
 	// Pentru fiecare block setam un sprite
 
-	for (int i = 0; i < NrOfWalls[0]; i++)
+	for (int index = 0; index < NrOfWalls[0]; index++)
 	{
-		m_Wall.resize(i+1);
-		m_Wall[i] = new Sprite("data/walls/stone.bmp", RGB(0xff, 0x00, 0xff));
-		m_Wall[i]->setBackBuffer(m_BgBuffer);
+		m_Wall.resize(index+1);
+		m_Wall[index] = new Sprite("data/walls/stone.bmp", RGB(0xff, 0x00, 0xff));
+		m_Wall[index]->setBackBuffer(m_BgBuffer);
 	}
 
-	for (int i = 0; i < NrOfWalls[1]; i++)
+	for (int index = 0; index < NrOfWalls[1]; index++)
 	{
-		m_indestructable_box.resize(i+1);
-		m_indestructable_box[i] = new Sprite("data/walls/stone.bmp", RGB(0xff, 0x00, 0xff));
-		m_indestructable_box[i]->setBackBuffer(m_BgBuffer);
+		m_indestructable_box.resize(index+1);
+		m_indestructable_box[index] = new Sprite("data/walls/stone.bmp", RGB(0xff, 0x00, 0xff));
+		m_indestructable_box[index]->setBackBuffer(m_BgBuffer);
 	}
 
-	for (int i = 0; i < NrOfWalls[2]; i++)
+	for (int index = 0; index < NrOfWalls[2]; index++)
 	{
-		m_destructable_box.resize(i+1);
-		m_destructable_box[i] = new Sprite("data/walls/brick.bmp", RGB(0xff, 0x00, 0xff));
-		m_destructable_box[i]->setBackBuffer(m_BgBuffer);
+		m_destructable_box.resize(index+1);
+		m_destructable_box[index] = new Sprite("data/walls/brick.bmp", RGB(0xff, 0x00, 0xff));
+		m_destructable_box[index]->setBackBuffer(m_BgBuffer);
 	}
 
 	xOffset = 0;
@@ -59,10 +57,10 @@ CMap::~CMap(void)
 	m_destructable_box.clear();
 }
 
-std::vector<int> CMap::OpenMap(const char* FileName)
+vector<int> CMap::OpenMap(const char* FileName)
 {
 	ifstream file(FileName, ifstream::in);
-	std::vector<int> NrOfObj;
+	vector<int> NrOfObj;
 
 	if(file.is_open())
 	{
@@ -152,7 +150,7 @@ void CMap::DrawEnviroment()
 						break;
 
 					case D_BOX:
-						if (m_MapMatrix[i][j]->m_Visible)
+						if (m_MapMatrix[i][j]->m_isVisible)
 						{
 							m_destructable_box[nDestruct]->mPosition.x = j*BLOCKSIZE + BLOCKSIZE / 2 + xOffset;
 							m_destructable_box[nDestruct]->mPosition.y = i*BLOCKSIZE + BLOCKSIZE / 2 + yOffset;
@@ -163,7 +161,7 @@ void CMap::DrawEnviroment()
 						break;
 
 					case I_BOX:
-						if (m_MapMatrix[i][j]->m_Visible)
+						if (m_MapMatrix[i][j]->m_isVisible)
 						{
 							m_indestructable_box[nIndestruct]->mPosition.x = j*BLOCKSIZE + BLOCKSIZE / 2 + xOffset;
 							m_indestructable_box[nIndestruct]->mPosition.y = i*BLOCKSIZE + BLOCKSIZE / 2 + yOffset;
@@ -199,7 +197,7 @@ void CMap::Change(char val, int i, int j)   //updateaza spriteul dupa coliziuni
 	m_MapMatrix[i][j]->m_Code = val;
 }
 
-void CMap::Colision(CPlayer *Player, Vec2 OldPos)
+void CMap::Colision(CPlayer* Player, Vec2 OldPos)
 {
 	for (int id = 0; id < 3; id++)
 	{
@@ -207,28 +205,36 @@ void CMap::Colision(CPlayer *Player, Vec2 OldPos)
 		{
 			if (id == 0) // wall
 			{
-				// Daca pozitia jucatorului este egala cu pozitia unuia dintre block-uri, atunci avem coliziune
-				if (Player->Position().x  == m_Wall[index]->mPosition.x && Player->Position().y  == m_Wall[index]->mPosition.y)
+				// Daca (pozitia jucatorului - pozitia zidului) au o diferenta de (BLOCKSIZE-5), inseamna ca jucatorul o sa intalneasca un zid
+				// Avem (BLOCKSIZE-5) deoarece se creeaza un bug la unele margini si trebuie scazut 1 pixel
+				if ((abs(Player->Position().x - m_Wall[index]->mPosition.x) < BLOCKSIZE-5 && abs(m_Wall[index]->mPosition.y - Player->Position().y) < BLOCKSIZE-5))
 				{
-					// Setam pozitia jucatorului la o pozitie anterioara, deoarece acesta trecea in mijlocul unui block
+					// Setam pozitia jucatorului la o pozitie anterioara si velocitatea pe 0, deoarece acesta a intalnit un zid
 					Player->Position().x = OldPos.x;
 					Player->Position().y = OldPos.y;
+					Player->Velocity() = Vec2(0,0);
+					Player->CanMove() = true; // Jucatorul se poate misca iar
 				} 
 			}
 			else if (id == 1) // indesctrutable
 			{
-				if (Player->Position().x  == m_indestructable_box[index]->mPosition.x && Player->Position().y  == m_indestructable_box[index]->mPosition.y)
+				if ((abs(Player->Position().x - m_indestructable_box[index]->mPosition.x) < BLOCKSIZE-5 && abs(m_indestructable_box[index]->mPosition.y - Player->Position().y) < BLOCKSIZE-5))
 				{
 					Player->Position().x = OldPos.x;
 					Player->Position().y = OldPos.y;
+					Player->Velocity() = Vec2(0,0);
+					Player->CanMove() = true;
 				}
 			}
 			else if (id == 2) // destructable
 			{
-				if (Player->Position().x  == m_destructable_box[index]->mPosition.x && Player->Position().y  == m_destructable_box[index]->mPosition.y)
+				
+				if ((abs(Player->Position().x - m_destructable_box[index]->mPosition.x) < BLOCKSIZE-5 && abs(m_destructable_box[index]->mPosition.y - Player->Position().y) < BLOCKSIZE-5))
 				{
 					Player->Position().x = OldPos.x;
 					Player->Position().y = OldPos.y;
+					Player->Velocity() = Vec2(0,0);
+					Player->CanMove() = true;
 				}
 			}
 		}
@@ -242,12 +248,12 @@ Object::Object(int i, int j, char code)
 	m_I = i;
 	m_J = j;
 	m_Code = code;
-	m_Visible = true;
+	m_isVisible = true;
 }
 
 void Object::Update()   //updateaza spriteul dupa coliziuni
 {
-	m_Visible = false;
+	m_isVisible = false;
 }
 
 void Object::Change(char val)   //updateaza spriteul dupa coliziuni

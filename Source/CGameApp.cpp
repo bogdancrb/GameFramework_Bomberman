@@ -30,6 +30,7 @@ CGameApp::CGameApp()
 	m_pBBuffer		= NULL;
 	m_pPlayer		= NULL;
 	m_Map           = NULL;
+	m_pBomb			= NULL;
 	m_LastFrameRate = 0;
 }
 
@@ -266,15 +267,15 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 			case VK_ESCAPE:
 				PostQuitMessage(0);
 				break;
-			case VK_RETURN:
-				fTimer = SetTimer(m_hWnd, 1, EXPLOSION_TIME, NULL);
-				m_pPlayer->Explode(1);
+			/*case VK_RETURN:
+				fTimer = SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
+				m_pPlayer->Explode();
+				break;*/
+			case VK_SPACE: // Daca jucatorul apasa tasta SPACE
+				m_pPlayer->PlaceBomb(&m_pBomb,m_pBBuffer); // Plasam bomba pe harta
 				break;
 			case VK_F1:
-				if (F1Pressed)
-					F1Pressed = false;
-				else
-					F1Pressed = true;
+				F1Pressed ? F1Pressed = false : F1Pressed = true;
 				break;
 			}
 			break;
@@ -283,8 +284,20 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 			switch(wParam)
 			{
 			case 1:
-				if(!m_pPlayer->AdvanceExplosion())
-					KillTimer(m_hWnd, 1);
+				/*if(!m_pPlayer->AdvanceExplosion())
+					KillTimer(m_hWnd, 1);*/
+
+				// Verificam daca bomba a fost creata (plasata)
+				if (m_pBomb != NULL)
+				{
+					// Daca bomba a explodat, o stergem din memorie si inchidem timer-ul
+					if(!m_pBomb->BombAdvanceExplosion())
+					{
+						delete m_pBomb;
+						m_pBomb = NULL;
+						KillTimer(m_hWnd, 1);
+					}
+				}
 			}
 			break;
 
@@ -305,9 +318,9 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 //-----------------------------------------------------------------------------
 bool CGameApp::BuildObjects()
 {
-	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight);
-	m_pPlayer = new CPlayer(m_pBBuffer,1);
-	m_Map = new CMap("data/map1.txt", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
+	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight); 
+	m_pPlayer = new CPlayer(m_pBBuffer);
+	m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 	
 	if(!m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd)))
 		return false;
@@ -322,7 +335,10 @@ bool CGameApp::BuildObjects()
 //-----------------------------------------------------------------------------
 void CGameApp::SetupGameState()
 {
-	m_pPlayer->Position() = Vec2(690, 390);
+	m_pPlayer->Position() = Vec2(390, 690);
+
+	// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
+	m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
 }
 
 //-----------------------------------------------------------------------------
@@ -364,7 +380,10 @@ void CGameApp::FrameAdvance()
 	AnimateObjects();
 
 	// Detecteaza coliziune jucator - ziduri
-	m_Map->Colision(m_pPlayer, m_pPlayer->PlayerOldPos());
+	//m_Map->Colision(m_pPlayer, m_pPlayer->PlayerOldPos());
+
+	// Detecteaza daca vreo bomba a fost acivata
+	CheckBombs();
 	
 	// Drawing the game objects
 	DrawObjects();
@@ -380,45 +399,40 @@ void CGameApp::ProcessInput( )
 	ULONG		Direction = 0;
 	POINT		CursorPos;
 	float		X = 0.0f, Y = 0.0f;
-	static int	Timer; // Cronometru folosit pentru a reduce viteza de deplasare a jucatorului
 
 	// Retrieve keyboard state
 	if ( !GetKeyboardState( pKeyBuffer ) ) return;
 
 	// Check the relevant keys
-	if ( pKeyBuffer[ VK_UP ] & 0xF0 )
+	if (m_pPlayer->CanMove()) // Verificam daca jucatorul se poate misca
 	{
-		Direction |= CPlayer::DIR_FORWARD;
-		Timer++;
-	}
-	else if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
-	{
-		Direction |= CPlayer::DIR_BACKWARD;
-		Timer++;
-	}
-	else if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
-	{
-		Direction |= CPlayer::DIR_LEFT;
-		Timer++;
-	}
-	else if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
-	{
-		Direction |= CPlayer::DIR_RIGHT;
-		Timer++;
+		if ( pKeyBuffer[ VK_UP ] & 0xF0 )
+		{
+			Direction |= CPlayer::DIR_FORWARD;
+			m_pPlayer->PlayerOldPos() = m_pPlayer->Position(); // Memoram vechea pozitie a jucatorului
+			m_pPlayer->CanMove() = false; // Jucatorul nu se mai poate misca in alte directii
+		}
+		else if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
+		{
+			Direction |= CPlayer::DIR_BACKWARD;
+			m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+			m_pPlayer->CanMove() = false;
+		}
+		else if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
+		{
+			Direction |= CPlayer::DIR_LEFT;
+			m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+			m_pPlayer->CanMove() = false;
+		}
+		else if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
+		{
+			Direction |= CPlayer::DIR_RIGHT;
+			m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+			m_pPlayer->CanMove() = false;
+		}
 	}
 
-	if (Timer == PLAYER_SPEED) // Daca cronometrul a ajuns egal cu viteza dorita
-	{
-		// Memoram vechea pozitie a jucatorului, pentru a folosii mai apoi in coliziuni
-		m_pPlayer->PlayerOldPos().x = m_pPlayer->Position().x;
-		m_pPlayer->PlayerOldPos().y = m_pPlayer->Position().y;
-
-		// Deplasam jucatorul
-		m_pPlayer->Move(Direction,1);
-
-		// Resetam cronometrul
-		Timer = 0;
-	}
+	m_pPlayer->Move(Direction);
 
 	// Now process the mouse (if the button is pressed)
 	if ( GetCapture() == m_hWnd )
@@ -441,7 +455,10 @@ void CGameApp::ProcessInput( )
 //-----------------------------------------------------------------------------
 void CGameApp::AnimateObjects()
 {
-	m_pPlayer->Update(m_Timer.GetTimeElapsed(),1);
+	m_pPlayer->Update(m_Timer.GetTimeElapsed());
+
+	if (m_pBomb != NULL)
+		m_pBomb->UpdateBomb(m_Timer.GetTimeElapsed());
 }
 
 //-----------------------------------------------------------------------------
@@ -454,6 +471,9 @@ void CGameApp::DrawObjects()
 
 	m_imgBackground.Paint(m_pBBuffer->getDC(), 0, 0);
 
+	if (m_pBomb != NULL)
+		m_pBomb->DrawBomb(); // Desenam bomba, daca aceasta a fost creata
+
 	m_pPlayer->Draw();
 
 	m_Map->Draw(0,0); // Desenare harta
@@ -464,18 +484,40 @@ void CGameApp::DrawObjects()
 }
 
 //-----------------------------------------------------------------------------
+// Name : CheckBombs () (Private)
+// Desc : Checks if the bombs are active or not
+//-----------------------------------------------------------------------------
+void CGameApp::CheckBombs()
+{
+	static int BombTimer; // Cronometram cat timp s-a scurs de cand a fost plasata bomba
+	
+	if (m_pBomb != NULL)
+	{
+		// Daca bomba a fost activata, atunci crestem cronometrul
+		if (m_pBomb->m_BombIsActive)
+		{
+			BombTimer++;
+		}
+
+		// Daca cronometrul a ajuns la timpul stabilit de BOMB_TIMER aceasta poate exploda
+		if (BombTimer == BOMB_TIMER)
+		{
+			SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
+			m_pBomb->BombExplode();
+			BombTimer = 0;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Name : DrawInfo () (Private)
 // Desc : Draws the game FPS, COORDONATES etc.
 //-----------------------------------------------------------------------------
 void CGameApp::DrawInfo()
 {
 	static TCHAR FrameRate[50];
-	static TCHAR TitleBuffer[255];
-	static TCHAR PlayerPoints[255];
-	static TCHAR PlayerXY[255];
-	static TCHAR PlayerHealth[255];
-	static TCHAR PlayerVelocity[255];
-	char ToString[255] = {0};
+	TCHAR DisplayInfo[255];
+	char ConvToString[255] = {0};
 
 	if (F1Pressed) // Daca s-a apasat F1 atunci afisam niste date tehnice pe ecran
 	{
@@ -483,30 +525,46 @@ void CGameApp::DrawInfo()
 		m_Timer.GetFrameRate(FrameRate, 50);
 		TextOut(m_pBBuffer->getDC(), 10, 10, FrameRate, strlen(FrameRate));
 
-		strcpy(PlayerXY,"Player Pos X: ");
-		itoa(m_pPlayer->Position().x,ToString,10);
-		strcat(PlayerXY,ToString);
-		strcat(PlayerXY,", Y: ");
-		itoa(m_pPlayer->Position().y,ToString,10);
-		strcat(PlayerXY,ToString);
-		TextOut(m_pBBuffer->getDC(), 10, 40, PlayerXY, strlen(PlayerXY));
+		strcpy(DisplayInfo,"Player Real Pos X: "); // Copiem in PlayerXY: "Player Real Pos X:"
+		itoa(m_pPlayer->Position().x,ConvToString,10); // Convertim pozitia jucatorului pe X, din (int) in (char)
+		strcat(DisplayInfo,ConvToString); // Adaugam pozitia in PlayerXY: "Player Real Pos X: %d"
+		strcat(DisplayInfo,", Y: "); // Adaugam in PlayerXY: "Player Real Pos X: %d, Y:"
+		itoa(m_pPlayer->Position().y,ConvToString,10); // Convertim pozitia jucatorului pe Y, din (int) in (char)
+		strcat(DisplayInfo,ConvToString); //  Adaugam pozitia in PlayerXY: "Player Real Pos X: %d, Y: %d"
+		TextOut(m_pBBuffer->getDC(), 10, 40, DisplayInfo, strlen(DisplayInfo)); // Afisam PlayerXY pe ecran
 
-		strcpy(PlayerVelocity,"Player Vel X: ");
-		itoa(m_pPlayer->Velocity().x,ToString,10);
-		strcat(PlayerVelocity,ToString);
-		strcat(PlayerVelocity,", Y: ");
-		itoa(m_pPlayer->Velocity().y,ToString,10);
-		strcat(PlayerVelocity,ToString);
-		TextOut(m_pBBuffer->getDC(), 10, 70, PlayerVelocity, strlen(PlayerVelocity));
+		strcpy(DisplayInfo,"Player Dec Pos X: ");
+		itoa(m_pPlayer->PlayerDecalPos().x,ConvToString,10);
+		strcat(DisplayInfo,ConvToString);
+		strcat(DisplayInfo,", Y: ");
+		itoa(m_pPlayer->PlayerDecalPos().y,ConvToString,10);
+		strcat(DisplayInfo,ConvToString);
+		TextOut(m_pBBuffer->getDC(), 10, 70, DisplayInfo, strlen(DisplayInfo));
+
+		strcpy(DisplayInfo,"Player Old Pos X: ");
+		itoa(m_pPlayer->PlayerOldPos().x,ConvToString,10);
+		strcat(DisplayInfo,ConvToString);
+		strcat(DisplayInfo,", Y: ");
+		itoa(m_pPlayer->PlayerOldPos().y,ConvToString,10);
+		strcat(DisplayInfo,ConvToString);
+		TextOut(m_pBBuffer->getDC(), 10, 100, DisplayInfo, strlen(DisplayInfo));
+
+		strcpy(DisplayInfo,"Player Vel X: ");
+		itoa(m_pPlayer->Velocity().x,ConvToString,10);
+		strcat(DisplayInfo,ConvToString);
+		strcat(DisplayInfo,", Y: ");
+		itoa(m_pPlayer->Velocity().y,ConvToString,10);
+		strcat(DisplayInfo,ConvToString);
+		TextOut(m_pBBuffer->getDC(), 10, 130, DisplayInfo, strlen(DisplayInfo));
 	}
 
-	/*strcpy(PlayerPoints,"Puncte: ");
+	/*strcpy(DisplayInfo,"Puncte: ");
 	itoa(m_pPlayer->m_pPoints,ToString,10);
-	strcat(PlayerPoints,ToString);
-	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-100, GetSystemMetrics(SM_CYSCREEN)-100, PlayerPoints, strlen(PlayerPoints));
+	strcat(DisplayInfo,ToString);
+	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-100, GetSystemMetrics(SM_CYSCREEN)-100, DisplayInfo, strlen(DisplayInfo));
 
-	strcpy(PlayerHealth,"Viata: ");
+	strcpy(DisplayInfo,"Viata: ");
 	itoa(m_pPlayer->m_pHealth,ToString,10);
-	strcat(PlayerHealth,ToString);
-	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-200, GetSystemMetrics(SM_CYSCREEN)-100, PlayerHealth, strlen(PlayerHealth));*/
+	strcat(DisplayInfo,ToString);
+	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-200, GetSystemMetrics(SM_CYSCREEN)-100, DisplayInfo, strlen(DisplayInfo));*/
 }

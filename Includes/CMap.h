@@ -5,16 +5,23 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef _CMAP_H_
+#define _CMAP_H_
 
-#pragma once
-
+//-----------------------------------------------------------------------------
+// CBomb Specific Includes
+//-----------------------------------------------------------------------------
 #include "Main.h"
 #include "ResizeEngine.h"
 #include "CPlayer.h"
-#include <vector>
-#include <fstream>
-#include <iostream>
 
+//-----------------------------------------------------------------------------
+// Main Class Definitions
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Name : CMap (Class)
+// Desc : Map class handles all objects on map
+//-----------------------------------------------------------------------------
 class CMap;
 
 class Object
@@ -26,7 +33,7 @@ public:
 	~Object(){}
 	void					Update();
 	void					Draw();
-	bool					m_Visible;  //true pentru zid vizibil si true pentru powerup invizibil
+	bool					m_isVisible;  //true pentru zid vizibil si true pentru powerup invizibil
 	char&					getCode() { return m_Code; }
 	void					Change(char val); //schimba m_code
 	int&					GetI() { return m_I; }
@@ -38,10 +45,12 @@ private:
 	char   					m_Code;		// Cod pentru verificare tip block
 };
 
-
 class CMap
 {
 public:
+	//-------------------------------------------------------------------------
+	// Enumerators
+	//-------------------------------------------------------------------------
 	enum ELEMENT
 	{
 		DIRT = '0',
@@ -50,9 +59,16 @@ public:
 		I_BOX = 'i'
 	};
 
+	//-------------------------------------------------------------------------
+	// Constructors & Destructors for This Class.
+	//-------------------------------------------------------------------------
 	CMap(const char*, BackBuffer *); 
 	~CMap(void);
 
+
+	//-------------------------------------------------------------------------
+	// Public Functions for This Class.
+	//-------------------------------------------------------------------------
 	int											Width(){ return m_BgImage.Width(); }
 	int											Height(){ return m_BgImage.Height(); }
 
@@ -63,23 +79,26 @@ public:
 	Object*										GetElement(Vec2 pos);
 	void										GeneratePowerups();
 
-	std::vector<std::vector<Object*> >*			GetMap() { return &m_MapMatrix; }
+	vector<vector<Object*>>*					GetMap() { return &m_MapMatrix; }
 	BackBuffer*									GetBgBuffer(){ return m_BgBuffer; }
 	double										GetXOffset() { return xOffset; }
 	double										GetYOffset() { return yOffset; }
 	Sprite*										GetWall(int i) { return m_Wall[i]; }
 
-	void										Colision(CPlayer*, Vec2 OldPos);	// Detectare coliziune intre jucator si block
+	void										Colision(CPlayer* Player, Vec2 OldPos);	// Detectare coliziune intre jucator si block
 
-	std::vector<int>							OpenMap(const char* FileName);	// Deschidere harta .txt
+	vector<int>									OpenMap(const char* FileName);	// Deschidere harta .txt
 
 private:
-	std::vector<Sprite*>						m_Wall;
-	std::vector<Sprite*>						m_indestructable_box;
-	std::vector<Sprite*>						m_destructable_box;
+	//-------------------------------------------------------------------------
+	// Private Variables for This Class.
+	//-------------------------------------------------------------------------
+	vector<Sprite*>								m_Wall;
+	vector<Sprite*>								m_indestructable_box;
+	vector<Sprite*>								m_destructable_box;
 
-	std::vector<std::vector<Object*>>			m_MapMatrix;	// Matrice pentru incarcare harta
-	std::vector<int>							NrOfWalls;	// Numarul de block-uri de fiecare tip
+	vector<vector<Object*>>						m_MapMatrix;	// Matrice pentru incarcare harta
+	vector<int>									NrOfWalls;	// Numarul de block-uri de fiecare tip
 
 	double										xOffset;
 	double										yOffset;
@@ -91,5 +110,4 @@ private:
 	void										DrawEnviroment();
 };
 
-
-
+#endif // _CMAP_H_

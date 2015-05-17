@@ -17,6 +17,7 @@
 #include "CPlayer.h"
 //#include "CObject.h"
 //#include "CNonPlayer.h"
+#include "CBomb.h"
 #include "BackBuffer.h"
 #include "ImageFile.h"
 #include "CMap.h"
@@ -64,6 +65,7 @@ private:
 	void		DrawObjects	   ( );
 	void		DrawInfo		( );
 	void		ProcessInput	  ( );
+	void		CheckBombs		( );
 
 	//-------------------------------------------------------------------------
 	// Private Static Functions For This Class
@@ -95,6 +97,8 @@ private:
 	BackBuffer*				m_pBBuffer;
 	CPlayer*				m_pPlayer;
 	CMap*					m_Map;	// Harta cu tot cu obiecte si coliziuni
+
+	CBomb*					m_pBomb;
 	
 	bool					F1Pressed;		// Pentru a putea desena pe ecran informatii precum FPS, etc.
 };

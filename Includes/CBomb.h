@@ -1,99 +1,71 @@
 //-----------------------------------------------------------------------------
-// File: CPlayer.h
+// File: CBomb.h
 //
-// Desc: This file stores the player object class. This class performs tasks
-//	   such as player movement, some minor physics as well as rendering.
+// Desc: This file stores the bomb objects and animations, including mechanics
 //
-// Original design by Adam Hoult & Gary Simmons. Modified by Mihai Popescu.
+// Original design by Adam Hoult & Gary Simmons.
 //-----------------------------------------------------------------------------
 
-#ifndef _CPLAYER_H_
-#define _CPLAYER_H_
+#ifndef _CBOMB_H_
+#define _CBOMB_H_
 
 //-----------------------------------------------------------------------------
-// CPlayer Specific Includes
+// CBomb Specific Includes
 //-----------------------------------------------------------------------------
 #include "Main.h"
 #include "Sprite.h"
-#include "CBomb.h"
-#include "BackBuffer.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Name : CPlayer (Class)
-// Desc : Player class handles all player manipulation, update and management.
+// Name : CBomb (Class)
+// Desc : Bomb class handles all bomb manipulation
 //-----------------------------------------------------------------------------
-class CPlayer
+class CBomb
 {
 public:
 	//-------------------------------------------------------------------------
 	// Enumerators
 	//-------------------------------------------------------------------------
-	enum DIRECTION 
-	{ 
-		DIR_NONE	= 0,
-		DIR_FORWARD	 = 1, 
-		DIR_BACKWARD	= 2, 
-		DIR_LEFT		= 4, 
-		DIR_RIGHT	   = 8, 
-	};
 
-	enum ESpeedStates
-	{
-		SPEED_START,
-		SPEED_STOP
-	};
 
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-			 CPlayer(const BackBuffer *pBackBuffer, int ID = 0);
-	virtual ~CPlayer();
+			 CBomb(const BackBuffer *pBackBuffer, int ID = 0);
+	virtual ~CBomb();
 
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					Update(float dt, int ID = 0);
-	void					Draw();
-	void					Move(ULONG ulDirection, int ID = 0);
+	void					UpdateBomb(float dt, int ID = 0);
+	void					DrawBomb();
+	Vec2&					BombPosition();
+	Vec2&					BombVelocity();
+	Vec2&					BombExplosionPosition(int index);
 
-	bool&					CanMove();
+	void					BombExplode(int ID = 0);
+	bool					BombAdvanceExplosion();
 
-	Vec2&					Position();
-	Vec2&					PlayerDecalPos();	// Pentru a accaesa pozitia decalata jucatorului
-	Vec2&					PlayerOldPos();		// Pentru a accaesa pozitia veche a jucatorului
-	Vec2&					Velocity();
-
-	void					PlaceBomb(CBomb** Bomb, BackBuffer* BBuffer); // Punem o bomba la pozitia jucatorului
-
-	void					Explode(int ID = 0);
-	bool					AdvanceExplosion();
-
-	int						Width() { return m_pSprite->width(); }
-	int						Height() { return m_pSprite->height(); }
+	int						Width() { return m_pBombSprite->width(); }
+	int						Height() { return m_pBombSprite->height(); }
 
 private:
 	//-------------------------------------------------------------------------
 	// Private Variables for This Class.
 	//-------------------------------------------------------------------------
-	Sprite*					m_pSprite;
-	ESpeedStates			m_eSpeedState;
-	float					m_fTimer;
-	
-	bool					m_bExplosion;
-	AnimatedSprite*			m_pExplosionSprite;
-	int						m_iExplosionFrame;
+	Sprite*					m_pBombSprite;
 
-	bool					m_pCanMove; // Pentru ca jucatrul sa nu se deplaseze in mai multe directii in acelasi timp
+	bool					m_bBombExplosion;
+	AnimatedSprite*			m_pBombExplosionSprite[EXPLOSION_RANGE];
+	int						m_iBombExplosionFrame;
 
 public:
 	//-------------------------------------------------------------------------
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
-	//int						m_pPoints;
-	//int						m_pHealth;
+	bool					m_BombIsActive;
 };
 
-#endif // _CPLAYER_H_
+#endif // _CBOMB_H_
