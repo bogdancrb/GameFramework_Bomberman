@@ -380,7 +380,7 @@ void CGameApp::FrameAdvance()
 	AnimateObjects();
 
 	// Detecteaza coliziune jucator - ziduri
-	//m_Map->Colision(m_pPlayer, m_pPlayer->PlayerOldPos());
+	m_Map->Colision(m_pPlayer, m_pPlayer->PlayerOldPos());
 
 	// Detecteaza daca vreo bomba a fost acivata
 	CheckBombs();
