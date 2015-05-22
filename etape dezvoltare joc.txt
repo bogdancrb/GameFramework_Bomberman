@@ -2,7 +2,7 @@
 2. incarcare coliziune obiecte 			(v)
 3. miscare jucator pe harta	 		(v)
 4. bomba si mecanica 				(v)
-5. distrugere block-uri				(-)
+5. distrugere block-uri				(v)
 6. dusmani + AI 				(-)
 7. distrugere inamici 				(-)
 8. menu (start, exit) 				(-)
