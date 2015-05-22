@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 #include "Main.h"
 #include "Sprite.h"
+#include "CMap.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -45,8 +46,10 @@ public:
 	Vec2&					BombVelocity();
 	Vec2&					BombExplosionPosition(int index);
 
-	void					BombExplode(int ID = 0);
+	void					BombExplode(CMap* Map, int ID = 0);
 	bool					BombAdvanceExplosion();
+
+	bool					BombColision(Vec2 Position, CMap* Map);
 
 	int						Width() { return m_pBombSprite->width(); }
 	int						Height() { return m_pBombSprite->height(); }

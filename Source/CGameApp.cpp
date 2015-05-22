@@ -380,7 +380,7 @@ void CGameApp::FrameAdvance()
 	AnimateObjects();
 
 	// Detecteaza coliziune jucator - ziduri
-	m_Map->Colision(m_pPlayer, m_pPlayer->PlayerOldPos());
+	m_pPlayer->PlayerColision(m_Map);
 
 	// Detecteaza daca vreo bomba a fost acivata
 	CheckBombs();
@@ -503,8 +503,19 @@ void CGameApp::CheckBombs()
 		if (BombTimer == BOMB_TIMER)
 		{
 			SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
-			m_pBomb->BombExplode();
+			m_pBomb->BombExplode(m_Map);
 			BombTimer = 0;
+			
+			// Coliziuni cu explozia bombei
+			for (int index = 0; index < EXPLOSION_RANGE; index++)
+			{
+				// Daca (pozitia jucatorului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre jucator si explozie
+				if ((abs(m_pPlayer->Position().x - m_pBomb->BombExplosionPosition(index).x) < BLOCKSIZE && abs(m_pPlayer->Position().y - m_pBomb->BombExplosionPosition(index).y) < BLOCKSIZE)) // coliziune jucator & explozie
+				{
+					// Setam jucatorul la coordonatele de inceput
+					SetupGameState();
+				}
+			}
 		}
 	}
 }

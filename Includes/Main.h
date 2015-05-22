@@ -43,7 +43,7 @@ using namespace std;
 #define MAX_CRATE 10
 #define MAX_NPCS 10
 #define BULLET_SPEED 50
-#define EXPLOSION_SPEED 540 // Viteza de afisare a exploziei
+#define EXPLOSION_SPEED 550 // Viteza de afisare a exploziei
 #define EXPLOSION_RANGE 3+3+1+3+3 // Pe cate bock-uri este extinsa explozia (3 sus + 3 jos + 1 centru + 3 stanga + 3 dreapta = 13)
 #define BLOCKSIZE 60 // Marimea unui block in pixeli (60x60)
 #define BOMB_TIMER 4*50 // Dupa cat timp sa explodeze o bomba (10*50 => 10 sec, 20*50 => 20 sec, etc.)

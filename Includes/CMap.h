@@ -12,8 +12,8 @@
 // CBomb Specific Includes
 //-----------------------------------------------------------------------------
 #include "Main.h"
+#include "Sprite.h"
 #include "ResizeEngine.h"
-#include "CPlayer.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -33,7 +33,6 @@ public:
 	~Object(){}
 	void					Update();
 	void					Draw();
-	bool					m_isVisible;  //true pentru zid vizibil si true pentru powerup invizibil
 	char&					getCode() { return m_Code; }
 	void					Change(char val); //schimba m_code
 	int&					GetI() { return m_I; }
@@ -77,15 +76,20 @@ public:
 	void										LoadElement(char val, int x, int y);
 
 	Object*										GetElement(Vec2 pos);
-	void										GeneratePowerups();
-
+	
 	vector<vector<Object*>>*					GetMap() { return &m_MapMatrix; }
 	BackBuffer*									GetBgBuffer(){ return m_BgBuffer; }
 	double										GetXOffset() { return xOffset; }
 	double										GetYOffset() { return yOffset; }
 	Sprite*										GetWall(int i) { return m_Wall[i]; }
 
-	void										Colision(CPlayer* Player, Vec2 OldPos);	// Detectare coliziune intre jucator si block
+	Vec2&										WallPosition(int i) { return m_Wall[i]->mPosition; }
+	Vec2&										IndesctructPosition(int i) { return m_indestructable_box[i]->mPosition; }
+	Vec2&										DesctructPosition(int i) { return m_destructable_box[i]->mPosition; }
+
+	bool&										isDesctructVisible(int i) { return m_destructable_box[i]->isSpriteVisible; }
+
+	void										GeneratePowerups();
 
 	vector<int>									OpenMap(const char* FileName);	// Deschidere harta .txt
 
@@ -98,7 +102,6 @@ private:
 	vector<Sprite*>								m_destructable_box;
 
 	vector<vector<Object*>>						m_MapMatrix;	// Matrice pentru incarcare harta
-	vector<int>									NrOfWalls;	// Numarul de block-uri de fiecare tip
 
 	double										xOffset;
 	double										yOffset;
@@ -108,6 +111,12 @@ private:
 
 	void										DrawBackground();
 	void										DrawEnviroment();
+
+public:
+	//-------------------------------------------------------------------------
+	// Keep these public because they need to be modified externally.
+	//-------------------------------------------------------------------------
+	vector<int>									NrOfWalls;	// Numarul de block-uri de fiecare tip
 };
 
 #endif // _CMAP_H_

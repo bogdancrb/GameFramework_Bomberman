@@ -18,9 +18,9 @@
 //#include "CObject.h"
 //#include "CNonPlayer.h"
 #include "CBomb.h"
+#include "CMap.h"
 #include "BackBuffer.h"
 #include "ImageFile.h"
-#include "CMap.h"
 
 //-----------------------------------------------------------------------------
 // Forward Declarations

@@ -116,7 +116,7 @@ void CMap::Draw(double x, double y)
 	xOffset = x;
 	yOffset = y;
 	
-	DrawBackground();
+	//DrawBackground();
 	DrawEnviroment();
 }
 
@@ -150,25 +150,25 @@ void CMap::DrawEnviroment()
 						break;
 
 					case D_BOX:
-						if (m_MapMatrix[i][j]->m_isVisible)
+						if (m_destructable_box[nDestruct]->isSpriteVisible)
 						{
 							m_destructable_box[nDestruct]->mPosition.x = j*BLOCKSIZE + BLOCKSIZE / 2 + xOffset;
 							m_destructable_box[nDestruct]->mPosition.y = i*BLOCKSIZE + BLOCKSIZE / 2 + yOffset;
 							m_destructable_box[nDestruct]->draw();
 							nDestruct++;
 						}
+						else
+						{
+							nDestruct++;
+						}
 
 						break;
 
 					case I_BOX:
-						if (m_MapMatrix[i][j]->m_isVisible)
-						{
-							m_indestructable_box[nIndestruct]->mPosition.x = j*BLOCKSIZE + BLOCKSIZE / 2 + xOffset;
-							m_indestructable_box[nIndestruct]->mPosition.y = i*BLOCKSIZE + BLOCKSIZE / 2 + yOffset;
-							m_indestructable_box[nIndestruct]->draw();
-							nIndestruct++;
-						}
-
+						m_indestructable_box[nIndestruct]->mPosition.x = j*BLOCKSIZE + BLOCKSIZE / 2 + xOffset;
+						m_indestructable_box[nIndestruct]->mPosition.y = i*BLOCKSIZE + BLOCKSIZE / 2 + yOffset;
+						m_indestructable_box[nIndestruct]->draw();
+						nIndestruct++;
 						break;
 				}
 			}
@@ -197,50 +197,6 @@ void CMap::Change(char val, int i, int j)   //updateaza spriteul dupa coliziuni
 	m_MapMatrix[i][j]->m_Code = val;
 }
 
-void CMap::Colision(CPlayer* Player, Vec2 OldPos)
-{
-	for (int id = 0; id < 3; id++)
-	{
-		for (int index = 0; index < NrOfWalls[id]; index++)
-		{
-			if (id == 0) // wall
-			{
-				// Daca (pozitia jucatorului - pozitia zidului) au o diferenta de (BLOCKSIZE-5), inseamna ca jucatorul o sa intalneasca un zid
-				// Avem (BLOCKSIZE-5) deoarece se creeaza un bug la unele margini si trebuie scazut 1 pixel
-				if ((abs(Player->Position().x - m_Wall[index]->mPosition.x) < BLOCKSIZE-5 && abs(m_Wall[index]->mPosition.y - Player->Position().y) < BLOCKSIZE-5))
-				{
-					// Setam pozitia jucatorului la o pozitie anterioara si velocitatea pe 0, deoarece acesta a intalnit un zid
-					Player->Position().x = OldPos.x;
-					Player->Position().y = OldPos.y;
-					Player->Velocity() = Vec2(0,0);
-					Player->CanMove() = true; // Jucatorul se poate misca iar
-				} 
-			}
-			else if (id == 1) // indesctrutable
-			{
-				if ((abs(Player->Position().x - m_indestructable_box[index]->mPosition.x) < BLOCKSIZE-5 && abs(m_indestructable_box[index]->mPosition.y - Player->Position().y) < BLOCKSIZE-5))
-				{
-					Player->Position().x = OldPos.x;
-					Player->Position().y = OldPos.y;
-					Player->Velocity() = Vec2(0,0);
-					Player->CanMove() = true;
-				}
-			}
-			else if (id == 2) // destructable
-			{
-				
-				if ((abs(Player->Position().x - m_destructable_box[index]->mPosition.x) < BLOCKSIZE-5 && abs(m_destructable_box[index]->mPosition.y - Player->Position().y) < BLOCKSIZE-5))
-				{
-					Player->Position().x = OldPos.x;
-					Player->Position().y = OldPos.y;
-					Player->Velocity() = Vec2(0,0);
-					Player->CanMove() = true;
-				}
-			}
-		}
-	}
-}
-
 //----------------------------------------------[Object class] -------------------------------------------------
 
 Object::Object(int i, int j, char code)
@@ -248,12 +204,6 @@ Object::Object(int i, int j, char code)
 	m_I = i;
 	m_J = j;
 	m_Code = code;
-	m_isVisible = true;
-}
-
-void Object::Update()   //updateaza spriteul dupa coliziuni
-{
-	m_isVisible = false;
 }
 
 void Object::Change(char val)   //updateaza spriteul dupa coliziuni

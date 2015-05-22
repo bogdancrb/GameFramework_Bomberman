@@ -126,6 +126,66 @@ void CPlayer::Move(ULONG ulDirection, int ID)
 		m_pSprite->mVelocity.y = 100;
 }
 
+void CPlayer::PlayerColision(CMap* Map)
+{
+	for (int id = 0; id < 3; id++)
+	{
+		for (int index = 0; index < Map->NrOfWalls[id]; index++)
+		{
+			if (id == 0) // wall
+			{
+				// Daca (pozitia jucatorului - pozitia zidului) au o diferenta de (BLOCKSIZE-5), inseamna ca jucatorul o sa intalneasca un zid
+				// Avem (BLOCKSIZE-5) deoarece se creeaza un bug la unele margini si trebuie scazut 1 pixel
+				if ((abs(m_pSprite->mPosition.x - Map->WallPosition(index).x) < BLOCKSIZE-5 && abs(Map->WallPosition(index).y - m_pSprite->mPosition.y) < BLOCKSIZE-5))
+				{
+					// Setam pozitia jucatorului la o pozitie anterioara si velocitatea pe 0, deoarece acesta a intalnit un zid
+					m_pSprite->mPosition.x = m_pSprite->PlayerOldPos.x;
+					m_pSprite->mPosition.y = m_pSprite->PlayerOldPos.y;
+					m_pSprite->mVelocity = Vec2(0,0);
+					m_pCanMove = true; // Jucatorul se poate misca iar
+				} 
+			}
+			else if (id == 1) // indesctrutable
+			{
+				if ((abs(m_pSprite->mPosition.x - Map->IndesctructPosition(index).x) < BLOCKSIZE-5 && abs(Map->IndesctructPosition(index).y - m_pSprite->mPosition.y) < BLOCKSIZE-5))
+				{
+					m_pSprite->mPosition.x = m_pSprite->PlayerOldPos.x;
+					m_pSprite->mPosition.y = m_pSprite->PlayerOldPos.y; 
+					m_pSprite->mVelocity = Vec2(0,0);
+					m_pCanMove = true;
+				}
+			}
+			else if (id == 2) // destructable
+			{
+				
+				if (((abs(m_pSprite->mPosition.x - Map->DesctructPosition(index).x) < BLOCKSIZE-5 && abs(Map->DesctructPosition(index).y - m_pSprite->mPosition.y) < BLOCKSIZE-5)) && Map->isDesctructVisible(index))
+				{
+					m_pSprite->mPosition.x = m_pSprite->PlayerOldPos.x;
+					m_pSprite->mPosition.y = m_pSprite->PlayerOldPos.y;
+					m_pSprite->mVelocity = Vec2(0,0);
+					m_pCanMove = true;
+				}
+			}
+		}
+	}
+}
+
+void CPlayer::PlaceBomb(CBomb** Bomb, BackBuffer* BBuffer)
+{
+	// Daca bomba nu a fost deja creata, o incarcam in memorie
+	if ((*Bomb) == NULL)
+		*Bomb = new CBomb(BBuffer);
+
+	// Daca bomba a fost activata si jucatorul se poate misca (pentru a nu pune bomba aiurea)
+	if (!(*Bomb)->m_BombIsActive && m_pCanMove == true)
+	{
+		// Setam pozitia bombei pe pozitia jucatorului si o marcam ca fiind activa
+		(*Bomb)->BombPosition() = m_pSprite->mPosition;
+		(*Bomb)->m_BombIsActive = true;
+	}
+}
+
+
 bool& CPlayer::CanMove()
 {
 	return m_pCanMove; // Returnam daca jucatorul se poate misca sau nu
@@ -149,21 +209,6 @@ Vec2& CPlayer::PlayerOldPos()
 Vec2& CPlayer::Velocity()
 {
 	return m_pSprite->mVelocity;
-}
-
-void CPlayer::PlaceBomb(CBomb** Bomb, BackBuffer* BBuffer)
-{
-	// Daca bomba nu a fost deja creata, o incarcam in memorie
-	if ((*Bomb) == NULL)
-		*Bomb = new CBomb(BBuffer);
-
-	// Daca bomba a fost activata si jucatorul se poate misca (pentru a nu pune bomba aiurea)
-	if (!(*Bomb)->m_BombIsActive && m_pCanMove == true)
-	{
-		// Setam pozitia bombei pe pozitia jucatorului si o marcam ca fiind activa
-		(*Bomb)->BombPosition() = m_pSprite->mPosition;
-		(*Bomb)->m_BombIsActive = true;
-	}
 }
 
 void CPlayer::Explode(int ID)

@@ -16,7 +16,7 @@
 #include "Main.h"
 #include "Sprite.h"
 #include "CBomb.h"
-#include "BackBuffer.h"
+#include "CMap.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -65,6 +65,8 @@ public:
 	Vec2&					PlayerDecalPos();	// Pentru a accaesa pozitia decalata jucatorului
 	Vec2&					PlayerOldPos();		// Pentru a accaesa pozitia veche a jucatorului
 	Vec2&					Velocity();
+
+	void					PlayerColision(CMap* Map);	// Detectare coliziune intre jucator si block de pe harta
 
 	void					PlaceBomb(CBomb** Bomb, BackBuffer* BBuffer); // Punem o bomba la pozitia jucatorului
 

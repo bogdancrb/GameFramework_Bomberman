@@ -34,7 +34,7 @@ public:
 	Vec2		mVelocity;
 
 	char		fileName[255];
-	bool		isSpriteVisible;
+	bool		isSpriteVisible; // Setam daca sprite-ul este vizibil sau nu
 private:
 	// Make copy constructor and assignment operator private
 	// so client cannot copy Sprites. We do this because

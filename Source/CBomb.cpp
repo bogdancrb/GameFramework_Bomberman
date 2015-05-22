@@ -88,15 +88,16 @@ Vec2& CBomb::BombVelocity()
 	return m_pBombSprite->mVelocity;
 }
 
-void CBomb::BombExplode(int ID)
+void CBomb::BombExplode(CMap* Map, int ID)
 {
 	//-------------------------------------------------------------------
 	// Forma explozie cu vectori
 	// Daca EXPLOSION_RANGE = 13 avem:
+	//								  Y:
 	//								  12
 	//								  10
 	//								   8
-	//							5 3 1 (0) 2 4 6
+	//					X:		5 3 1 (0) 2 4 6  
 	//							       7
 	//								   9
 	//								  11
@@ -104,6 +105,7 @@ void CBomb::BombExplode(int ID)
 	//-------------------------------------------------------------------
 
 	int k = 0; // Folosim o variabila pentru a memora pozitiile bombei fata de jucator
+	bool colisionPareX = false, colisionImpareX = false, colisionPareY = false, colisionImpareY = false;
 	
 	m_pBombExplosionSprite[0]->mPosition = m_pBombSprite->mPosition; // Prima explozie are loc pe centru (pe pozitia bombei)
 
@@ -111,16 +113,92 @@ void CBomb::BombExplode(int ID)
 	{
 		k += BLOCKSIZE; // Setam viitoarele coordonate in functie de BLOCKSIZE (60, 120, 180 etc.)
 
-		// Setam jumate din explozii sa aiba loc pe axa X
-		m_pBombExplosionSprite[index]->mPosition = m_pBombSprite->mPosition + Vec2(-k,0);
-		m_pBombExplosionSprite[index+1]->mPosition = m_pBombSprite->mPosition + Vec2(k,0);
+		// Daca coliziunea nu a avut loc pe axa -X
+		if (!colisionImpareX)
+		{
+			if (!colisionImpareX)
+				// Setam o parte din explozii sa aiba loc pe axa -X
+				m_pBombExplosionSprite[index]->mPosition = m_pBombSprite->mPosition + Vec2(-k,0);
 
-		// Setam cealalta jumate din explozii sa aiba loc pe axa Y
-		m_pBombExplosionSprite[index+(EXPLOSION_RANGE)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,-k);
-		m_pBombExplosionSprite[index+(EXPLOSION_RANGE+1)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,k);
+			// Daca exista coliziune intre bomba si harta
+			if (BombColision(m_pBombSprite->mPosition + Vec2(-k,0), Map) == true)
+				// Setam coliziune pe axa -X, pentru a nu incarca urmatoarele explozii
+				// Ex: 1 => nu mai au loc nici exploziile 3 si 5
+				colisionImpareX = true;
+		}
+
+		// Daca coliziunea nu a avut loc pe axa +X
+		if (!colisionPareX)
+		{
+			if (!colisionPareX)
+				// Setam o parte din explozii sa aiba loc pe axa +X
+				m_pBombExplosionSprite[index+1]->mPosition = m_pBombSprite->mPosition + Vec2(k,0);
+
+			// Daca exista coliziune intre bomba si harta
+			if (BombColision(m_pBombSprite->mPosition + Vec2(k,0), Map) == true)
+				// Setam coliziune pe axa +X, pentru a nu incarca urmatoarele explozii
+				// Ex: 2 => nu mai au loc nici exploziile 4 si 6
+				colisionPareX = true;
+		}
+
+		// Daca coliziunea nu a avut loc pe axa -Y
+		if (!colisionImpareY)
+		{
+			if (!colisionImpareY)
+				// Setam o parte din explozii sa aiba loc pe axa -Y
+				m_pBombExplosionSprite[index+(EXPLOSION_RANGE)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,-k);
+
+			// Daca exista coliziune intre bomba si harta
+			if (BombColision(m_pBombSprite->mPosition + Vec2(0,-k), Map) == true)
+				// Setam coliziune pe axa -Y, pentru a nu incarca urmatoarele explozii
+				// Ex: 7 => nu mai au loc nici exploziile 9 si 11
+				colisionImpareY = true;
+		}
+
+		// Daca coliziunea nu a avut loc pe axa +Y
+		if (!colisionPareY)
+		{
+			if (!colisionPareY)
+				// Setam o parte din explozii sa aiba loc pe axa +Y
+				m_pBombExplosionSprite[index+(EXPLOSION_RANGE+1)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,k);
+
+			// Daca exista coliziune intre bomba si harta
+			if (BombColision(m_pBombSprite->mPosition + Vec2(0,k), Map) == true)
+				// Setam coliziune pe axa +Y, pentru a nu incarca urmatoarele explozii
+				// Ex: 8 => nu mai au loc nici exploziile 10 si 12
+				colisionPareY = true;
+		}
 	}
 
 	m_bBombExplosion = true;
+}
+
+bool CBomb::BombColision(Vec2 Position, CMap* Map)
+{
+	for (int id = 1; id < 3; id++)
+	{
+		for (int index = 0; index < Map->NrOfWalls[id]; index++)
+		{
+			if (id == 1) // indestructable
+			{
+				if (Position == Map->IndesctructPosition(index))
+				{
+					return true;
+				}
+			}
+
+			if (id == 2) // destructable
+			{
+				if (Position == Map->DesctructPosition(index) && Map->isDesctructVisible(index))
+				{
+					Map->isDesctructVisible(index) = false;
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 bool CBomb::BombAdvanceExplosion()
