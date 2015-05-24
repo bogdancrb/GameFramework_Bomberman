@@ -5,7 +5,7 @@
 5. distrugere block-uri				(v)
 6. dusmani + AI 				(-)
 7. distrugere inamici 				(-)
-8. menu (start, exit) 				(-)
+8. menu (start, exit) 				(v)
 9. portale random 				(-)
 10. viata jucator (3 vieti) 			(-)
 11. puncte 					(-)

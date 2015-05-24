@@ -319,11 +319,10 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 bool CGameApp::BuildObjects()
 {
 	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight); 
-	m_pPlayer = new CPlayer(m_pBBuffer);
-	m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
+
+	this->m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
+	m_MMenu->m_Active = true;
 	
-	if(!m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd)))
-		return false;
 
 	// Success!
 	return true;
@@ -335,10 +334,19 @@ bool CGameApp::BuildObjects()
 //-----------------------------------------------------------------------------
 void CGameApp::SetupGameState()
 {
-	m_pPlayer->Position() = Vec2(390, 690);
 
-	// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
-	m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+	PlaySound("data/menu/muzick.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
+
+	//ar trebui sa stergem functia asta ...nu intra in ea nici-odata
+	if (!m_MMenu->m_Active)
+	{
+		m_pPlayer->Position() = Vec2(390, 690);
+
+		// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
+		m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+
+	}
+
 }
 
 //-----------------------------------------------------------------------------
@@ -348,11 +356,12 @@ void CGameApp::SetupGameState()
 //-----------------------------------------------------------------------------
 void CGameApp::ReleaseObjects( )
 {
+	/*
 	if(m_pPlayer != NULL)
 	{
 		delete m_pPlayer;
 		m_pPlayer = NULL;
-	}
+	}*/
 
 	if(m_pBBuffer != NULL)
 	{
@@ -375,16 +384,17 @@ void CGameApp::FrameAdvance()
 
 	// Poll & Process input devices
 	ProcessInput();
+	if (!m_MMenu->m_Active)
+	{
+		// Animate the game objects
+		AnimateObjects();
 
-	// Animate the game objects
-	AnimateObjects();
+		// Detecteaza coliziune jucator - ziduri
+		m_pPlayer->PlayerColision(m_Map);
 
-	// Detecteaza coliziune jucator - ziduri
-	m_pPlayer->PlayerColision(m_Map);
-
-	// Detecteaza daca vreo bomba a fost acivata
-	CheckBombs();
-	
+		// Detecteaza daca vreo bomba a fost acivata
+		CheckBombs();
+	}
 	// Drawing the game objects
 	DrawObjects();
 }
@@ -402,51 +412,124 @@ void CGameApp::ProcessInput( )
 
 	// Retrieve keyboard state
 	if ( !GetKeyboardState( pKeyBuffer ) ) return;
-
-	// Check the relevant keys
-	if (m_pPlayer->CanMove()) // Verificam daca jucatorul se poate misca
+	
+	if (!m_MMenu->m_Active)
 	{
-		if ( pKeyBuffer[ VK_UP ] & 0xF0 )
+		// Check the relevant keys
+		if (m_pPlayer->CanMove()) // Verificam daca jucatorul se poate misca
 		{
-			Direction |= CPlayer::DIR_FORWARD;
-			m_pPlayer->PlayerOldPos() = m_pPlayer->Position(); // Memoram vechea pozitie a jucatorului
-			m_pPlayer->CanMove() = false; // Jucatorul nu se mai poate misca in alte directii
+			if (pKeyBuffer[VK_UP] & 0xF0)
+			{
+				Direction |= CPlayer::DIR_FORWARD;
+				m_pPlayer->PlayerOldPos() = m_pPlayer->Position(); // Memoram vechea pozitie a jucatorului
+				m_pPlayer->CanMove() = false; // Jucatorul nu se mai poate misca in alte directii
+			}
+			else if (pKeyBuffer[VK_DOWN] & 0xF0)
+			{
+				Direction |= CPlayer::DIR_BACKWARD;
+				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+				m_pPlayer->CanMove() = false;
+			}
+			else if (pKeyBuffer[VK_LEFT] & 0xF0)
+			{
+				Direction |= CPlayer::DIR_LEFT;
+				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+				m_pPlayer->CanMove() = false;
+			}
+			else if (pKeyBuffer[VK_RIGHT] & 0xF0)
+			{
+				Direction |= CPlayer::DIR_RIGHT;
+				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+				m_pPlayer->CanMove() = false;
+			}
 		}
-		else if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
+		m_pPlayer->Move(Direction);
+
+		if (GetCapture() == m_hWnd)
 		{
-			Direction |= CPlayer::DIR_BACKWARD;
-			m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
-			m_pPlayer->CanMove() = false;
-		}
-		else if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
-		{
-			Direction |= CPlayer::DIR_LEFT;
-			m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
-			m_pPlayer->CanMove() = false;
-		}
-		else if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
-		{
-			Direction |= CPlayer::DIR_RIGHT;
-			m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
-			m_pPlayer->CanMove() = false;
+			GetCursorPos(&CursorPos);
+
+			if (CursorPos.x >= 1300 && CursorPos.x <= 1360 && CursorPos.y >= 0 && CursorPos.y <= 60)
+			{
+				//m_bActive = false;
+				this->m_SMenu->m_S_M_Active = true;
+			}
+			if (this->m_SMenu->m_S_M_Active)
+			{
+				//popup menu code
+				if (CursorPos.x >= 594 && CursorPos.x <= 768)
+				{
+					if (CursorPos.y >= 268 && CursorPos.y <= 313)
+					{
+						this->m_SMenu->m_S_M_Active = false;
+						//m_bActive = true;
+					}
+
+					if (CursorPos.y >= 330 && CursorPos.y <= 376)
+					{
+						// stergem ce a fost inainte
+						delete m_pPlayer;
+						delete m_SMenu;
+						delete m_Map;
+
+						//creem jocul din nou
+						m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
+						m_pPlayer = new CPlayer(m_pBBuffer);
+						m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
+
+						m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd));
+
+						m_pPlayer->Position() = Vec2(390, 690);
+
+						// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
+						m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+					}
+
+					if (CursorPos.y >= 394 && CursorPos.y <= 440)
+					{
+						this->m_MMenu->m_Active = true;
+						delete m_pPlayer;
+						delete m_SMenu;
+						delete m_Map;
+					}
+
+					if (CursorPos.y >=451 && CursorPos.y <= 497)
+					{
+						PostQuitMessage(0);
+					}
+				}
+			}
 		}
 	}
 
-	m_pPlayer->Move(Direction);
-
-	// Now process the mouse (if the button is pressed)
-	if ( GetCapture() == m_hWnd )
+	if (m_MMenu->m_Active)
 	{
-		// Hide the mouse pointer
-		SetCursor( NULL );
+		if (GetCapture() == m_hWnd)
+		{
+			GetCursorPos(&CursorPos);
 
-		// Retrieve the cursor position
-		GetCursorPos( &CursorPos );
+			if (CursorPos.x >= 290 && CursorPos.x <= 390 && CursorPos.y >= 200 && CursorPos.y <= 260)
+			{
+			
+				m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
+				m_pPlayer = new CPlayer(m_pBBuffer);
+				m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 
-		// Reset our cursor position so we can keep going forever :)
-		SetCursorPos( m_OldCursorPos.x, m_OldCursorPos.y );
+				m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd));
 
-	} // End if Captured
+				m_pPlayer->Position() = Vec2(390, 690);
+
+				// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
+				m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+
+				this->m_MMenu->m_Active = false;
+			}
+			if (CursorPos.x >= 997 && CursorPos.x <= 1057 && CursorPos.y >= 398 && CursorPos.y <= 458)
+			{
+					PostQuitMessage(0);	
+			}
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -468,17 +551,23 @@ void CGameApp::AnimateObjects()
 void CGameApp::DrawObjects()
 {
 	m_pBBuffer->reset();
+	if (m_MMenu->m_Active == true)
+	{
+		m_MMenu->Draw();
+	}
+	else
+	{
+		m_imgBackground.Paint(m_pBBuffer->getDC(), 0, 0);
 
-	m_imgBackground.Paint(m_pBBuffer->getDC(), 0, 0);
+		if (m_pBomb != NULL)
+			m_pBomb->DrawBomb(); // Desenam bomba, daca aceasta a fost creata
 
-	if (m_pBomb != NULL)
-		m_pBomb->DrawBomb(); // Desenam bomba, daca aceasta a fost creata
+		m_pPlayer->Draw();
 
-	m_pPlayer->Draw();
-
-	m_Map->Draw(0,0); // Desenare harta
-
-	DrawInfo();
+		m_Map->Draw(0, 0); // Desenare harta
+		m_SMenu->Draw();
+		DrawInfo();
+	}
 
 	m_pBBuffer->present();
 }
@@ -529,6 +618,7 @@ void CGameApp::DrawInfo()
 	static TCHAR FrameRate[50];
 	TCHAR DisplayInfo[255];
 	char ConvToString[255] = {0};
+	POINT		CursorPos;
 
 	if (F1Pressed) // Daca s-a apasat F1 atunci afisam niste date tehnice pe ecran
 	{
@@ -567,6 +657,16 @@ void CGameApp::DrawInfo()
 		itoa(m_pPlayer->Velocity().y,ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		TextOut(m_pBBuffer->getDC(), 10, 130, DisplayInfo, strlen(DisplayInfo));
+
+
+		GetCursorPos(&CursorPos);
+		strcpy(DisplayInfo, "Cursor pos X: ");
+		itoa(CursorPos.x, ConvToString, 10);
+		strcat(DisplayInfo, ConvToString);
+		strcat(DisplayInfo, ", Y: ");
+		itoa(CursorPos.y, ConvToString, 10);
+		strcat(DisplayInfo, ConvToString);
+		TextOut(m_pBBuffer->getDC(), 10, 160, DisplayInfo, strlen(DisplayInfo));
 	}
 
 	/*strcpy(DisplayInfo,"Puncte: ");

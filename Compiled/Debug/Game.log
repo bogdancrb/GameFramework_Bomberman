@@ -1,0 +1,100 @@
+﻿Build started 24.05.2015 18:53:59.
+     1>Project "D:\GameFramework_Bomberman\Game.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ID:\GameFramework_Bomberman\\Includes /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _VC80_UPGRADE=0x0600 /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo".\Compiled\Debug/" /Fd".\Compiled\Debug/vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Source\CGameApp.cpp Source\Menu.cpp
+         Menu.cpp
+         CGameApp.cpp
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(113): warning C4244: '=' : conversion from 'LONG' to 'USHORT', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(114): warning C4244: '=' : conversion from 'LONG' to 'USHORT', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(85): warning C4101: 'msg' : unreferenced local variable
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(629): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(112) : see declaration of 'strcpy'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(630): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(630): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(631): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(632): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(633): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(633): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(634): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(637): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(112) : see declaration of 'strcpy'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(638): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(638): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(639): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(640): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(641): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(641): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(642): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(645): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(112) : see declaration of 'strcpy'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(646): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(646): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(647): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(648): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(649): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(649): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(650): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(653): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(112) : see declaration of 'strcpy'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(654): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(654): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(655): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(656): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(657): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(657): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(658): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(663): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(112) : see declaration of 'strcpy'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(664): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(665): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(666): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(667): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _itoa. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdlib.h(937) : see declaration of 'itoa'
+     1>d:\gameframework_bomberman\source\cgameapp.cpp(668): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\string.h(118) : see declaration of 'strcat'
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GameFramework_Bomberman\d_Game.exe" /INCREMENTAL /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:".\Compiled\Debug/Game.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE:NO /IMPLIB:"D:\GameFramework_Bomberman\d_Game.lib" /MACHINE:X86 /SAFESEH .\Compiled\Debug\Game.res
+         .\Compiled\Debug/BackBuffer.obj
+         .\Compiled\Debug/CBomb.obj
+         .\Compiled\Debug/CGameApp.obj
+         .\Compiled\Debug/CMap.obj
+         .\Compiled\Debug/CNonPlayer.obj
+         .\Compiled\Debug/CObject.obj
+         .\Compiled\Debug/CPlayer.obj
+         .\Compiled\Debug/CTimer.obj
+         .\Compiled\Debug/ImageFile.obj
+         .\Compiled\Debug/Main.obj
+         .\Compiled\Debug/Menu.obj
+         .\Compiled\Debug/ResizeEngine.obj
+         .\Compiled\Debug/Sprite.obj
+         .\Compiled\Debug/Vec2.obj
+         Game.vcxproj -> D:\GameFramework_Bomberman\d_Game.exe
+     1>Done Building Project "D:\GameFramework_Bomberman\Game.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:06.66

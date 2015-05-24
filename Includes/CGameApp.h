@@ -21,6 +21,7 @@
 #include "CMap.h"
 #include "BackBuffer.h"
 #include "ImageFile.h"
+#include "Menu.h"
 
 //-----------------------------------------------------------------------------
 // Forward Declarations
@@ -101,6 +102,10 @@ private:
 	CBomb*					m_pBomb;
 	
 	bool					F1Pressed;		// Pentru a putea desena pe ecran informatii precum FPS, etc.
+
+
+	MainMenu*				m_MMenu;
+	InGameMenu*				m_SMenu;
 };
 
 #endif // _CGAMEAPP_H_
