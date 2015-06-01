@@ -6,7 +6,7 @@
 6. dusmani + AI 				(v)
 7. distrugere inamici 				(v)
 8. menu (start, exit) 				(v)
-9. viata jucator (3 vieti) 			(-)
+9. viata jucator (3 vieti) 			(v)
 10. puncte 					(-)
 11. portale random 				(-)
 12. 1 bonus level (cu tot cu mecanica) 		(-)
