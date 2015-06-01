@@ -119,7 +119,11 @@ void CNonPlayer::NPCMove(CPlayer* Player, CMap* Map, CBomb* Bomb)
 
 	// Daca distanta dintre NPC si jucator este mai mica sau egala decat 0, inseamna ca jucatorul a murit
 	if (abs(m_pNPCSprite->mPosition.x - Player->Position().x) <= 0 && abs(m_pNPCSprite->mPosition.y - Player->Position().y) <= 0)
+	{
+		Player->get_m_pLives().back()->removed = true;
+		Player->Killed();
 		Player->ResetPosition = true;
+	}
 }
 
 void CNonPlayer::SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb)

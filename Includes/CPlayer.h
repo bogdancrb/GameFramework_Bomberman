@@ -17,6 +17,7 @@
 #include "Sprite.h"
 #include "CBomb.h"
 #include "CMap.h"
+#include "Lives.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -73,6 +74,13 @@ public:
 	void					Explode(int ID = 0);
 	bool					AdvanceExplosion();
 
+	void					Killed();
+
+	//functie accesor --numarul initial de vieti ale jucatorului
+	int&					get_no_lives(){ return no_lives; }
+	std::vector<Lives*>		get_m_pLives(){ return m_pLives; }
+	bool&					get_if_is_dead(){ return is_dead; }
+
 	int						Width() { return m_pSprite->width(); }
 	int						Height() { return m_pSprite->height(); }
 
@@ -87,6 +95,13 @@ private:
 	int						m_iExplosionFrame;
 
 	bool					m_pCanMove; // Pentru ca jucatrul sa nu se deplaseze in mai multe directii in acelasi timp
+	
+	//player lives
+	//-----------------------------------
+	std::vector<Lives*>		m_pLives;
+	int						no_lives;
+	//-----------------------------------
+	bool				    is_dead;
 
 public:
 	//-------------------------------------------------------------------------

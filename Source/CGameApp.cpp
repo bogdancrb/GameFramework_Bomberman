@@ -642,21 +642,26 @@ void CGameApp::DrawObjects()
 		if (m_pBomb != NULL)
 			m_pBomb->DrawBomb(); // Desenam bomba, daca aceasta a fost creata
 
+		m_Map->Draw(0, 0); // Desenare harta
+		
 		m_pPlayer->Draw();
 
 		for (int index = 0; index < MAX_NPCS; index++)
 			if (m_pNPC[index] != NULL)
 				m_pNPC[index]->DrawNPC();
 
-		m_Map->Draw(0,0); // Desenare harta
-
 		// Generam pozitii random pentru NPC pe harta
 		NPCStartingPosition();
-
 		m_SMenu->Draw();
 	}
 
 	DrawInfo();
+
+	if (m_pPlayer->get_if_is_dead() == true)
+	{
+		PostQuitMessage(0);
+		//OR 	ReleaseObjects ( );	 AND return to main menu
+	}
 
 	m_pBBuffer->present();
 }
@@ -692,6 +697,8 @@ void CGameApp::CheckBombs()
 				{
 					// Setam ca jucatorul a murit
 					m_pPlayer->ResetPosition = true;
+					this->m_pPlayer->get_m_pLives().back()->removed = true;
+					m_pPlayer->Killed();
 				}
 
 				for (int indexNPC = 0; indexNPC < MAX_NPCS; indexNPC++)

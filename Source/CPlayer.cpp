@@ -45,9 +45,16 @@ CPlayer::CPlayer(const BackBuffer *pBackBuffer, int ID)
 	// Jucatorul se poate misca
 	m_pCanMove = true;
 
-	//m_pPoints = 0;
 	//m_pHealth = 100;
 	ResetPosition = false;
+
+	is_dead = false;
+	//initial playerul are 3 vieti
+	no_lives = 3;
+	for (unsigned int i = 0; i < get_no_lives(); i++)
+	{
+		this->m_pLives.push_back(new Lives(pBackBuffer));
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -64,14 +71,35 @@ void CPlayer::Update(float dt)
 {
 	// Update sprite
 	m_pSprite->update(dt);
+
+	int space = 1366 - 135;
+	for (Lives* life : m_pLives)
+	{
+		if (!life->removed)
+		{
+			life->Position().x = space;
+			life->Position().y = this->Height();
+			space -= 2*this->Width();
+		}
+		life->Update(dt);
+	}
 }
 
 void CPlayer::Draw()
 {
-	if(!m_bExplosion)
+	if (!m_bExplosion)
+	{
 		m_pSprite->draw();
+	}
 	else
+	{
 		m_pExplosionSprite->draw();
+	}
+
+	for (Lives* life : m_pLives)
+	{
+		life->Draw();
+	}
 }
 
 void CPlayer::Move(ULONG ulDirection, int ID)
@@ -232,4 +260,25 @@ bool CPlayer::AdvanceExplosion()
 	}
 
 	return true;
+}
+
+void CPlayer::Killed()
+{
+	for (int i = this->m_pLives.size(); i >0; i--)
+	{
+		//Lives* life = this->m_pLives.at(i);
+		if (!this->m_pLives[i - 1]->removed == false)
+		{
+			this->m_pLives[i-1]->removed = true;
+			this->m_pLives[i - 1]->Position().y = -2000;
+			delete m_pLives[i - 1];
+			m_pLives[i - 1] = NULL;
+			m_pLives.erase(m_pLives.begin() + i - 1);
+		}
+	}
+	if (this->m_pLives.size() == 0)
+	{
+		this->is_dead = true;
+		//PostQuitMessage(0);
+	}
 }
