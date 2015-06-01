@@ -35,7 +35,7 @@ public:
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					UpdateObj( float dt , int ID );
+	void					UpdateObj(float dt);
 	void					DrawObj();
 	void					StartMoving();
 	Vec2&					ObjPosition();

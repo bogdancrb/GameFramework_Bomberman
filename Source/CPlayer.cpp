@@ -28,8 +28,6 @@ CPlayer::CPlayer(const BackBuffer *pBackBuffer, int ID)
 	}
 
 	m_pSprite->setBackBuffer(pBackBuffer);
-	m_eSpeedState = SPEED_STOP;
-	m_fTimer = 0;
 
 	// Animation frame crop rectangle
 	RECT r;
@@ -49,6 +47,7 @@ CPlayer::CPlayer(const BackBuffer *pBackBuffer, int ID)
 
 	//m_pPoints = 0;
 	//m_pHealth = 100;
+	ResetPosition = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -61,10 +60,10 @@ CPlayer::~CPlayer()
 	delete m_pExplosionSprite;
 }
 
-void CPlayer::Update(float dt, int ID)
+void CPlayer::Update(float dt)
 {
 	// Update sprite
-	m_pSprite->update(dt,ID);
+	m_pSprite->update(dt);
 }
 
 void CPlayer::Draw()
@@ -77,12 +76,26 @@ void CPlayer::Draw()
 
 void CPlayer::Move(ULONG ulDirection, int ID)
 {
+	// Deplasam jucatorul cu cate o casuta, in centrul acesteia
+	// O casuta are dimensiunea BLOCKSIZE x BLOCKSIZE
+	if( ulDirection & CPlayer::DIR_LEFT )
+		m_pSprite->mVelocity.x = -(BLOCKSIZE + 40);
+
+	if( ulDirection & CPlayer::DIR_RIGHT )
+		m_pSprite->mVelocity.x = BLOCKSIZE + 40;
+
+	if( ulDirection & CPlayer::DIR_FORWARD )
+		m_pSprite->mVelocity.y = -(BLOCKSIZE + 40);
+
+	if( ulDirection & CPlayer::DIR_BACKWARD )
+		m_pSprite->mVelocity.y = BLOCKSIZE + 40;
+
 	// Verificam daca pozitia curenta a jucatorului are o diferenta de BLOCKSIZE fata de cea anterioara
-	// Astfel se creeaza pozitia decalata cu BLOCKSIZE a jucatorului (PlayerDecalPos)
-	if ( (int)m_pSprite->mPosition.x > (int)m_pSprite->PlayerDecalPos.x + BLOCKSIZE
-		|| (int)(m_pSprite->mPosition.y) > (int)(m_pSprite->PlayerDecalPos.y) + BLOCKSIZE
-		|| (int)(m_pSprite->mPosition.x) < (int)(m_pSprite->PlayerDecalPos.x) - BLOCKSIZE
-		|| (int)(m_pSprite->mPosition.y) < (int)(m_pSprite->PlayerDecalPos.y) - BLOCKSIZE
+	// Astfel se creeaza pozitia decalata cu BLOCKSIZE a jucatorului (mDecalPos)
+	if ( (int)m_pSprite->mPosition.x > (int)m_pSprite->mDecalPos.x + BLOCKSIZE
+		|| (int)(m_pSprite->mPosition.y) > (int)(m_pSprite->mDecalPos.y) + BLOCKSIZE
+		|| (int)(m_pSprite->mPosition.x) < (int)(m_pSprite->mDecalPos.x) - BLOCKSIZE
+		|| (int)(m_pSprite->mPosition.y) < (int)(m_pSprite->mDecalPos.y) - BLOCKSIZE
 		)
 	{
 		// Setam velocitatea jucatorului la 0 pentru ca a ajuns in centrul urmatorului block
@@ -92,38 +105,24 @@ void CPlayer::Move(ULONG ulDirection, int ID)
 		// Pozitia o calculam in functie de vechea pozitie a lui +/- BLOCKSIZE
 		// Mai trebuie testat, pot aparea probleme la velocitati mai mari de BLOCKSIZE.
 		// Erori precum: X = 392.14687 => X = 390.0 SAU X = 349.24454 => X = 350.0
-		if ((int)m_pSprite->mPosition.x > (int)m_pSprite->PlayerDecalPos.x + BLOCKSIZE)
-			m_pSprite->mPosition.x = (int)m_pSprite->PlayerOldPos.x + BLOCKSIZE;
+		if ((int)m_pSprite->mPosition.x > (int)m_pSprite->mDecalPos.x + BLOCKSIZE)
+			m_pSprite->mPosition.x = (int)m_pSprite->mOldPos.x + BLOCKSIZE;
 
-		if ((int)(m_pSprite->mPosition.y) > (int)(m_pSprite->PlayerDecalPos.y) + BLOCKSIZE)
-			m_pSprite->mPosition.y = (int)m_pSprite->PlayerOldPos.y + BLOCKSIZE;
+		if ((int)(m_pSprite->mPosition.y) > (int)(m_pSprite->mDecalPos.y) + BLOCKSIZE)
+			m_pSprite->mPosition.y = (int)m_pSprite->mOldPos.y + BLOCKSIZE;
 
-		if ((int)(m_pSprite->mPosition.x) < (int)(m_pSprite->PlayerDecalPos.x) - BLOCKSIZE)
-			m_pSprite->mPosition.x = (int)m_pSprite->PlayerOldPos.x - BLOCKSIZE;
+		if ((int)(m_pSprite->mPosition.x) < (int)(m_pSprite->mDecalPos.x) - BLOCKSIZE)
+			m_pSprite->mPosition.x = (int)m_pSprite->mOldPos.x - BLOCKSIZE;
 
-		if ((int)(m_pSprite->mPosition.y) < (int)(m_pSprite->PlayerDecalPos.y) - BLOCKSIZE)
-			m_pSprite->mPosition.y = (int)m_pSprite->PlayerOldPos.y - BLOCKSIZE;
+		if ((int)(m_pSprite->mPosition.y) < (int)(m_pSprite->mDecalPos.y) - BLOCKSIZE)
+			m_pSprite->mPosition.y = (int)m_pSprite->mOldPos.y - BLOCKSIZE;
 
 		// Memoram pozitia decalata, care o sa fie egala cu cea curenta (verificati F1 in joc pentru exemplu)
-		m_pSprite->PlayerDecalPos = m_pSprite->mPosition;
+		m_pSprite->mDecalPos = m_pSprite->mPosition;
 
 		// Acum jucatorul se poate misca in alte directii
 		m_pCanMove = true;
 	}
-
-	// Deplasam jucatorul cu cate o casuta, in centrul acesteia
-	// O casuta are dimensiunea BLOCKSIZE x BLOCKSIZE
-	if( ulDirection & CPlayer::DIR_LEFT )
-		m_pSprite->mVelocity.x = -100;
-
-	if( ulDirection & CPlayer::DIR_RIGHT )
-		m_pSprite->mVelocity.x = 100;
-
-	if( ulDirection & CPlayer::DIR_FORWARD )
-		m_pSprite->mVelocity.y = -100;
-
-	if( ulDirection & CPlayer::DIR_BACKWARD )
-		m_pSprite->mVelocity.y = 100;
 }
 
 void CPlayer::PlayerColision(CMap* Map)
@@ -139,8 +138,8 @@ void CPlayer::PlayerColision(CMap* Map)
 				if ((abs(m_pSprite->mPosition.x - Map->WallPosition(index).x) < BLOCKSIZE-5 && abs(Map->WallPosition(index).y - m_pSprite->mPosition.y) < BLOCKSIZE-5))
 				{
 					// Setam pozitia jucatorului la o pozitie anterioara si velocitatea pe 0, deoarece acesta a intalnit un zid
-					m_pSprite->mPosition.x = m_pSprite->PlayerOldPos.x;
-					m_pSprite->mPosition.y = m_pSprite->PlayerOldPos.y;
+					m_pSprite->mPosition.x = m_pSprite->mOldPos.x;
+					m_pSprite->mPosition.y = m_pSprite->mOldPos.y;
 					m_pSprite->mVelocity = Vec2(0,0);
 					m_pCanMove = true; // Jucatorul se poate misca iar
 				} 
@@ -149,8 +148,8 @@ void CPlayer::PlayerColision(CMap* Map)
 			{
 				if ((abs(m_pSprite->mPosition.x - Map->IndesctructPosition(index).x) < BLOCKSIZE-5 && abs(Map->IndesctructPosition(index).y - m_pSprite->mPosition.y) < BLOCKSIZE-5))
 				{
-					m_pSprite->mPosition.x = m_pSprite->PlayerOldPos.x;
-					m_pSprite->mPosition.y = m_pSprite->PlayerOldPos.y; 
+					m_pSprite->mPosition.x = m_pSprite->mOldPos.x;
+					m_pSprite->mPosition.y = m_pSprite->mOldPos.y; 
 					m_pSprite->mVelocity = Vec2(0,0);
 					m_pCanMove = true;
 				}
@@ -160,8 +159,8 @@ void CPlayer::PlayerColision(CMap* Map)
 				
 				if (((abs(m_pSprite->mPosition.x - Map->DesctructPosition(index).x) < BLOCKSIZE-5 && abs(Map->DesctructPosition(index).y - m_pSprite->mPosition.y) < BLOCKSIZE-5)) && Map->isDesctructVisible(index))
 				{
-					m_pSprite->mPosition.x = m_pSprite->PlayerOldPos.x;
-					m_pSprite->mPosition.y = m_pSprite->PlayerOldPos.y;
+					m_pSprite->mPosition.x = m_pSprite->mOldPos.x;
+					m_pSprite->mPosition.y = m_pSprite->mOldPos.y;
 					m_pSprite->mVelocity = Vec2(0,0);
 					m_pCanMove = true;
 				}
@@ -185,7 +184,6 @@ void CPlayer::PlaceBomb(CBomb** Bomb, BackBuffer* BBuffer)
 	}
 }
 
-
 bool& CPlayer::CanMove()
 {
 	return m_pCanMove; // Returnam daca jucatorul se poate misca sau nu
@@ -198,12 +196,12 @@ Vec2& CPlayer::Position()
 
 Vec2& CPlayer::PlayerDecalPos()
 {
-	return m_pSprite->PlayerDecalPos; // Accesam pozitia decalata a jucatorului
+	return m_pSprite->mDecalPos; // Accesam pozitia decalata a jucatorului
 }
 
 Vec2& CPlayer::PlayerOldPos()
 {
-	return m_pSprite->PlayerOldPos; // Accesam pozitia veche a jucatorului
+	return m_pSprite->mOldPos; // Accesam pozitia veche a jucatorului
 }
 
 Vec2& CPlayer::Velocity()
@@ -229,7 +227,6 @@ bool CPlayer::AdvanceExplosion()
 			m_bExplosion = false;
 			m_iExplosionFrame = 0;
 			m_pSprite->mVelocity = Vec2(0,0);
-			m_eSpeedState = SPEED_STOP;
 			return false;
 		}
 	}

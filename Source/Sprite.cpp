@@ -66,7 +66,7 @@ Sprite::~Sprite()
 	DeleteDC(mhSpriteDC);
 }
 
-void Sprite::update(float dt, int ID)
+void Sprite::update(float dt)
 {
 	// Update the sprites position.
 

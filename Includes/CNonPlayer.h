@@ -15,6 +15,9 @@
 //-----------------------------------------------------------------------------
 #include "Main.h"
 #include "Sprite.h"
+#include "CMap.h"
+#include "CPlayer.h"
+#include "CBomb.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -29,22 +32,31 @@ public:
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-			 CNonPlayer(const BackBuffer *pBackBuffer,int ID);
+			 CNonPlayer(const BackBuffer *pBackBuffer,int ID = 0);
 	virtual ~CNonPlayer();
 
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					UpdateNPC( float dt , int ID);
+	void					UpdateNPC(float dt);
 	void					DrawNPC();
-	void					StartMoving();
+
+	void					NPCMove(CPlayer* Player, CMap* Map, CBomb* Bomb);
+
 	Vec2&					NPCPosition();
+	Vec2&					NPCOldPosition();
+	Vec2&					NPCDecalPosition();
 	Vec2&					NPCVelocity();
-	bool					Visible();
+
+	bool&					Visible();
+
+	void					SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb);
+
+	void					NPCColision(CMap* Map, CBomb* Bomb);	// Detectare coliziune intre jucator si block de pe harta
+	bool					NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY);
 
 	void					NPCExplode(int ID = 0);
 	bool					NPCAdvanceExplosion();
-	void					NPCFire();
 
 private:
 	//-------------------------------------------------------------------------
@@ -56,11 +68,14 @@ private:
 	AnimatedSprite*			m_pNPCExplosionSprite;
 	int						m_iNPCExplosionFrame;
 
+	int						MoveTimer; // Pentru a putea stabili o viteza de schimbare a velocitatii
+
+	Vec2					DistanceToPlayer; // Pentru a memora distanta ramasa intre NPC si jucator
+
 public:
 	//-------------------------------------------------------------------------
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
-	int						m_pNPCHealth;
 };
 
 #endif // _CNONPLAYER_H_

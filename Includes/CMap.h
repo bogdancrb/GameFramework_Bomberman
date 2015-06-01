@@ -30,7 +30,8 @@ class Object
 
 public:
 	Object(int i, int j, char code);
-	~Object(){}
+	//~Object();
+
 	void					Update();
 	void					Draw();
 	char&					getCode() { return m_Code; }
@@ -101,8 +102,6 @@ private:
 	vector<Sprite*>								m_indestructable_box;
 	vector<Sprite*>								m_destructable_box;
 
-	vector<vector<Object*>>						m_MapMatrix;	// Matrice pentru incarcare harta
-
 	double										xOffset;
 	double										yOffset;
 
@@ -116,6 +115,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
+	vector<vector<Object*>>						m_MapMatrix;	// Matrice pentru incarcare harta
+
 	vector<int>									NrOfWalls;	// Numarul de block-uri de fiecare tip
 };
 

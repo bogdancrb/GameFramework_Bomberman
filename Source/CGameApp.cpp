@@ -31,6 +31,12 @@ CGameApp::CGameApp()
 	m_pPlayer		= NULL;
 	m_Map           = NULL;
 	m_pBomb			= NULL;
+	m_MMenu			= NULL;
+	m_SMenu			= NULL;
+
+	for (int index = 0; index < MAX_NPCS; index++)
+		m_pNPC[index]			= NULL;
+
 	m_LastFrameRate = 0;
 }
 
@@ -264,9 +270,9 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 		case WM_KEYDOWN:
 			switch(wParam)
 			{
-			case VK_ESCAPE:
+			/*case VK_ESCAPE:
 				PostQuitMessage(0);
-				break;
+				break;*/
 			/*case VK_RETURN:
 				fTimer = SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
 				m_pPlayer->Explode();
@@ -320,9 +326,18 @@ bool CGameApp::BuildObjects()
 {
 	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight); 
 
-	this->m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
-	m_MMenu->m_Active = true;
+	m_pPlayer = new CPlayer(m_pBBuffer);
+
+	for (int index = 0; index < MAX_NPCS; index++)
+		m_pNPC[index] = new CNonPlayer(m_pBBuffer);
+
+	if (m_MMenu == NULL)
+		m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
+
+	m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 	
+	if(!m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd)))
+		return false;
 
 	// Success!
 	return true;
@@ -334,19 +349,15 @@ bool CGameApp::BuildObjects()
 //-----------------------------------------------------------------------------
 void CGameApp::SetupGameState()
 {
+	//PlaySound("data/menu/song1.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
 
-	PlaySound("data/menu/muzick.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
-
-	//ar trebui sa stergem functia asta ...nu intra in ea nici-odata
 	if (!m_MMenu->m_Active)
 	{
 		m_pPlayer->Position() = Vec2(390, 690);
 
 		// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
 		m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
-
 	}
-
 }
 
 //-----------------------------------------------------------------------------
@@ -354,16 +365,30 @@ void CGameApp::SetupGameState()
 // Desc : Releases our objects and their associated memory so that we can
 //		rebuild them, if required, during our applications life-time.
 //-----------------------------------------------------------------------------
-void CGameApp::ReleaseObjects( )
+void CGameApp::ReleaseObjects( int dontDeleteBuff )
 {
-	/*
 	if(m_pPlayer != NULL)
 	{
 		delete m_pPlayer;
 		m_pPlayer = NULL;
-	}*/
+	}
 
-	if(m_pBBuffer != NULL)
+	for (int index = 0; index < MAX_NPCS; index++)
+	{
+		if(m_pNPC[index] != NULL)
+		{
+			delete m_pNPC[index];
+			m_pNPC[index] = NULL;
+		}
+	}
+
+	if(m_Map != NULL)
+	{
+		delete m_Map;
+		m_Map = NULL;
+	}
+
+	if(m_pBBuffer != NULL && !dontDeleteBuff)
 	{
 		delete m_pBBuffer;
 		m_pBBuffer = NULL;
@@ -384,17 +409,41 @@ void CGameApp::FrameAdvance()
 
 	// Poll & Process input devices
 	ProcessInput();
+
+	// Verificam daca s-au apasat butoane pe ecran
+	ProcessMenuButtons();
+
 	if (!m_MMenu->m_Active)
 	{
 		// Animate the game objects
 		AnimateObjects();
 
+		// Daca jucatorul a murit, atunci resetam pozitia acestuia
+		if (m_pPlayer->ResetPosition)
+		{
+			SetupGameState();
+			m_pPlayer->ResetPosition = false;
+		}
+
 		// Detecteaza coliziune jucator - ziduri
 		m_pPlayer->PlayerColision(m_Map);
+
+		for (int index = 0; index < MAX_NPCS; index++)
+		{
+			if (m_pNPC[index])
+			{
+				// Punem NPC-ul in miscare
+				m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
+
+				// Detecteaza coliziune NPC - ziduri - bomba
+				m_pNPC[index]->NPCColision(m_Map, m_pBomb);
+			}
+		}
 
 		// Detecteaza daca vreo bomba a fost acivata
 		CheckBombs();
 	}
+	
 	// Drawing the game objects
 	DrawObjects();
 }
@@ -407,92 +456,116 @@ void CGameApp::ProcessInput( )
 {
 	static UCHAR pKeyBuffer[ 256 ];
 	ULONG		Direction = 0;
-	POINT		CursorPos;
-	float		X = 0.0f, Y = 0.0f;
 
 	// Retrieve keyboard state
 	if ( !GetKeyboardState( pKeyBuffer ) ) return;
-	
+
 	if (!m_MMenu->m_Active)
 	{
 		// Check the relevant keys
 		if (m_pPlayer->CanMove()) // Verificam daca jucatorul se poate misca
 		{
-			if (pKeyBuffer[VK_UP] & 0xF0)
+			if ( pKeyBuffer[ VK_UP ] & 0xF0 )
 			{
 				Direction |= CPlayer::DIR_FORWARD;
 				m_pPlayer->PlayerOldPos() = m_pPlayer->Position(); // Memoram vechea pozitie a jucatorului
 				m_pPlayer->CanMove() = false; // Jucatorul nu se mai poate misca in alte directii
 			}
-			else if (pKeyBuffer[VK_DOWN] & 0xF0)
+			else if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
 			{
 				Direction |= CPlayer::DIR_BACKWARD;
 				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
 				m_pPlayer->CanMove() = false;
 			}
-			else if (pKeyBuffer[VK_LEFT] & 0xF0)
+			else if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
 			{
 				Direction |= CPlayer::DIR_LEFT;
 				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
 				m_pPlayer->CanMove() = false;
 			}
-			else if (pKeyBuffer[VK_RIGHT] & 0xF0)
+			else if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
 			{
 				Direction |= CPlayer::DIR_RIGHT;
 				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
 				m_pPlayer->CanMove() = false;
 			}
 		}
+
 		m_pPlayer->Move(Direction);
+	}
+}
 
-		if (GetCapture() == m_hWnd)
+//-----------------------------------------------------------------------------
+// Name : ProcessButtons () (Private)
+// Desc : Verifica daca s-au apasat butoane pe ecran (in general cele de menu)
+//-----------------------------------------------------------------------------
+void CGameApp::ProcessMenuButtons()
+{
+	POINT		CursorPos;
+	
+	// Daca menu principal este inactiv
+	if (!m_MMenu->m_Active)
+	{
+		// Verificam daca s-a apasat mouse
+		if ( GetCapture() == m_hWnd )
 		{
-			GetCursorPos(&CursorPos);
+			// Memoram pozitia cursorului
+			GetCursorPos( &CursorPos );
 
+			// Buton pentru pause in-game
 			if (CursorPos.x >= 1300 && CursorPos.x <= 1360 && CursorPos.y >= 0 && CursorPos.y <= 60)
 			{
-				//m_bActive = false;
-				this->m_SMenu->m_S_M_Active = true;
+				// Setam menu secundar ca fiind activ
+				m_SMenu->m_Active = true;
 			}
-			if (this->m_SMenu->m_S_M_Active)
+
+			// Daca menu secundar este activ
+			if (m_SMenu->m_Active)
 			{
-				//popup menu code
+				// Daca cursorul se afla pe menu secundar
 				if (CursorPos.x >= 594 && CursorPos.x <= 768)
 				{
+					// Menu secundar - Continue
 					if (CursorPos.y >= 268 && CursorPos.y <= 313)
 					{
-						this->m_SMenu->m_S_M_Active = false;
-						//m_bActive = true;
+						// Ascundem menu secundar
+						m_SMenu->m_Active = false;
 					}
 
+					// Menu secundar - Restart
 					if (CursorPos.y >= 330 && CursorPos.y <= 376)
 					{
-						// stergem ce a fost inainte
-						delete m_pPlayer;
-						delete m_SMenu;
-						delete m_Map;
+						// Stergem toate obiectele
+						ReleaseObjects();
 
-						//creem jocul din nou
+						//Incarcam obiectele
+						BuildObjects();
+
+						// Creem menu secundar + buton de pauza
 						m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
-						m_pPlayer = new CPlayer(m_pBBuffer);
-						m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 
-						m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd));
+						// Incarcam setarile initiale
+						SetupGameState();
 
-						m_pPlayer->Position() = Vec2(390, 690);
-
-						// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
-						m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+						// Ascundem menu-ul secundar
+						m_SMenu->m_Active = false;
 					}
 
+					// Menu secundar - Main Menu
 					if (CursorPos.y >= 394 && CursorPos.y <= 440)
 					{
-						this->m_MMenu->m_Active = true;
-						delete m_pPlayer;
+						// Stergem toate obiectele
+						ReleaseObjects(1);
 						delete m_SMenu;
-						delete m_Map;
+
+						// Creem menu principal
+						m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
+
+						// Menu principal este activ
+						m_MMenu->m_Active = true;
 					}
 
+					// Menu secundar - Exit
 					if (CursorPos.y >=451 && CursorPos.y <= 497)
 					{
 						PostQuitMessage(0);
@@ -501,32 +574,34 @@ void CGameApp::ProcessInput( )
 			}
 		}
 	}
-
-	if (m_MMenu->m_Active)
+	else // Daca menu principal este activ
 	{
+		// Verificam daca s-a apasat mouse
 		if (GetCapture() == m_hWnd)
 		{
+			// Memoram pozitia cursorului
 			GetCursorPos(&CursorPos);
 
+			// Menu principal - Play
 			if (CursorPos.x >= 290 && CursorPos.x <= 390 && CursorPos.y >= 200 && CursorPos.y <= 260)
 			{
-			
+				// Ascundem menu principal
+				m_MMenu->m_Active = false;
+
+				//Incarcam obiectele
+				BuildObjects();
+
+				// Creem menu secundar + buton de pauza
 				m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
-				m_pPlayer = new CPlayer(m_pBBuffer);
-				m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 
-				m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd));
-
-				m_pPlayer->Position() = Vec2(390, 690);
-
-				// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
-				m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
-
-				this->m_MMenu->m_Active = false;
+				// Incarcam setarile initiale
+				SetupGameState();
 			}
+
+			// Menu principal - Exit
 			if (CursorPos.x >= 997 && CursorPos.x <= 1057 && CursorPos.y >= 398 && CursorPos.y <= 458)
 			{
-					PostQuitMessage(0);	
+				PostQuitMessage(0);	
 			}
 		}
 	}
@@ -540,6 +615,10 @@ void CGameApp::AnimateObjects()
 {
 	m_pPlayer->Update(m_Timer.GetTimeElapsed());
 
+	for (int index = 0; index < MAX_NPCS; index++)
+		if (m_pNPC[index] != NULL)
+			m_pNPC[index]->UpdateNPC(m_Timer.GetTimeElapsed());
+
 	if (m_pBomb != NULL)
 		m_pBomb->UpdateBomb(m_Timer.GetTimeElapsed());
 }
@@ -551,7 +630,8 @@ void CGameApp::AnimateObjects()
 void CGameApp::DrawObjects()
 {
 	m_pBBuffer->reset();
-	if (m_MMenu->m_Active == true)
+
+	if (m_MMenu->m_Active)
 	{
 		m_MMenu->Draw();
 	}
@@ -564,10 +644,19 @@ void CGameApp::DrawObjects()
 
 		m_pPlayer->Draw();
 
-		m_Map->Draw(0, 0); // Desenare harta
+		for (int index = 0; index < MAX_NPCS; index++)
+			if (m_pNPC[index] != NULL)
+				m_pNPC[index]->DrawNPC();
+
+		m_Map->Draw(0,0); // Desenare harta
+
+		// Generam pozitii random pentru NPC pe harta
+		NPCStartingPosition();
+
 		m_SMenu->Draw();
-		DrawInfo();
 	}
+
+	DrawInfo();
 
 	m_pBBuffer->present();
 }
@@ -596,13 +685,115 @@ void CGameApp::CheckBombs()
 			BombTimer = 0;
 			
 			// Coliziuni cu explozia bombei
-			for (int index = 0; index < EXPLOSION_RANGE; index++)
+			for (int indexBomb = 0; indexBomb < EXPLOSION_RANGE; indexBomb++)
 			{
 				// Daca (pozitia jucatorului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre jucator si explozie
-				if ((abs(m_pPlayer->Position().x - m_pBomb->BombExplosionPosition(index).x) < BLOCKSIZE && abs(m_pPlayer->Position().y - m_pBomb->BombExplosionPosition(index).y) < BLOCKSIZE)) // coliziune jucator & explozie
+				if ((abs(m_pPlayer->Position().x - m_pBomb->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pPlayer->Position().y - m_pBomb->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune jucator & explozie
 				{
-					// Setam jucatorul la coordonatele de inceput
-					SetupGameState();
+					// Setam ca jucatorul a murit
+					m_pPlayer->ResetPosition = true;
+				}
+
+				for (int indexNPC = 0; indexNPC < MAX_NPCS; indexNPC++)
+				{
+					if (m_pNPC[indexNPC] != NULL)
+					{
+						// Daca (pozitia NPC-ului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre NPC si explozie
+						if ((abs(m_pNPC[indexNPC]->NPCPosition().x - m_pBomb->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pNPC[indexNPC]->NPCPosition().y - m_pBomb->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune NPC & explozie
+						{
+							// Stergem NPC din memorie
+							delete m_pNPC[indexNPC];
+							m_pNPC[indexNPC] = NULL;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : NPCStartingPosition () (Private)
+// Desc : Stabileste pozitiile de inceput ale NPC-ului, in functie de celalalte 
+// pozitii ale celorlalti NPC si ziduri
+//-----------------------------------------------------------------------------
+void CGameApp::NPCStartingPosition()
+{
+	int i, j;
+
+	for (int indexNPC = 0; indexNPC < MAX_NPCS; indexNPC++)
+	{
+		for (int id = 0; id < 3; id++)
+		{
+			for (int indexMap = 0; indexMap < m_Map->NrOfWalls[id]; indexMap++)
+			{
+				if (m_pNPC[indexNPC] != NULL)
+				{
+					if (id == 0) // wall
+					{
+						// Cat timp pozitia NPC-ului este egala cu cea a unui zid sau pozitia este (0,0)
+						while (
+							(m_pNPC[indexNPC]->NPCPosition() == m_Map->WallPosition(indexMap)) 
+							|| m_pNPC[indexNPC]->NPCPosition() == Vec2(0,0)
+							)
+						{
+							// Generam niste coordonate random
+							i = rand() % m_Map->m_MapMatrix.size() + 0;
+							j = rand() % m_Map->m_MapMatrix[i].size() + 0;
+
+							// Daca (viitoarea pozitie a NPC-ului - pozitia jucatorului) este mai mare sau egala decat NPC_SPAWN_DISTANCE
+							if (abs(m_pPlayer->Position().x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
+								&& abs(m_pPlayer->Position().y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
+							{
+								// Setam coordonatele random pentru pozitia jucatorului, dar si cea veche si decalata
+								m_pNPC[indexNPC]->NPCPosition().x = m_pNPC[indexNPC]->NPCOldPosition().x = m_pNPC[indexNPC]->NPCDecalPosition().x = j * BLOCKSIZE + BLOCKSIZE / 2;
+								m_pNPC[indexNPC]->NPCPosition().y = m_pNPC[indexNPC]->NPCOldPosition().y = m_pNPC[indexNPC]->NPCDecalPosition().y = i * BLOCKSIZE + BLOCKSIZE / 2;
+							}
+
+							// Trebuie ca index sa fie 0, pentru a verifica pozitiile cu zidurile precedente
+							indexMap = 0;
+						}
+					}
+					else if (id == 1) // indestructable
+					{
+						while (
+							(m_pNPC[indexNPC]->NPCPosition() == m_Map->IndesctructPosition(indexMap)) 
+							|| m_pNPC[indexNPC]->NPCPosition() == Vec2(0,0)
+							)
+						{
+							i = rand() % m_Map->m_MapMatrix.size() + 0;
+							j = rand() % m_Map->m_MapMatrix[i].size() + 0;
+
+							if (abs(m_pPlayer->Position().x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
+								&& abs(m_pPlayer->Position().y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
+							{
+								m_pNPC[indexNPC]->NPCPosition().x = m_pNPC[indexNPC]->NPCOldPosition().x = m_pNPC[indexNPC]->NPCDecalPosition().x = j * BLOCKSIZE + BLOCKSIZE / 2;
+								m_pNPC[indexNPC]->NPCPosition().y = m_pNPC[indexNPC]->NPCOldPosition().y = m_pNPC[indexNPC]->NPCDecalPosition().y = i * BLOCKSIZE + BLOCKSIZE / 2;
+							}
+
+							indexMap = 0;
+						}
+					}
+					else if (id == 2) // destructable
+					{
+						while (
+							(m_pNPC[indexNPC]->NPCPosition() == m_Map->DesctructPosition(indexMap) && m_Map->isDesctructVisible(indexMap)) 
+							|| m_pNPC[indexNPC]->NPCPosition() == Vec2(0,0)
+							)
+						{
+							i = rand() % m_Map->m_MapMatrix.size() + 0;
+							j = rand() % m_Map->m_MapMatrix[i].size() + 0;
+
+							if (abs(m_pPlayer->Position().x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
+								&& abs(m_pPlayer->Position().y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
+							{
+								m_pNPC[indexNPC]->NPCPosition().x = m_pNPC[indexNPC]->NPCOldPosition().x = m_pNPC[indexNPC]->NPCDecalPosition().x = j * BLOCKSIZE + BLOCKSIZE / 2;
+								m_pNPC[indexNPC]->NPCPosition().y = m_pNPC[indexNPC]->NPCOldPosition().y = m_pNPC[indexNPC]->NPCDecalPosition().y = i * BLOCKSIZE + BLOCKSIZE / 2;
+							}
+
+							indexMap = 0;
+						}
+					}
 				}
 			}
 		}
@@ -657,7 +848,6 @@ void CGameApp::DrawInfo()
 		itoa(m_pPlayer->Velocity().y,ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		TextOut(m_pBBuffer->getDC(), 10, 130, DisplayInfo, strlen(DisplayInfo));
-
 
 		GetCursorPos(&CursorPos);
 		strcpy(DisplayInfo, "Cursor pos X: ");

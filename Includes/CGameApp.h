@@ -16,12 +16,12 @@
 #include "CTimer.h"
 #include "CPlayer.h"
 //#include "CObject.h"
-//#include "CNonPlayer.h"
+#include "CNonPlayer.h"
 #include "CBomb.h"
 #include "CMap.h"
 #include "BackBuffer.h"
 #include "ImageFile.h"
-#include "Menu.h"
+#include "CMenu.h"
 
 //-----------------------------------------------------------------------------
 // Forward Declarations
@@ -57,7 +57,7 @@ private:
 	// Private Functions for This Class
 	//-------------------------------------------------------------------------
 	bool		BuildObjects	  ( );
-	void		ReleaseObjects	( );
+	void		ReleaseObjects	( int dontDeleteBuff = 0 );
 	void		FrameAdvance	  ( );
 	bool		CreateDisplay	 ( );
 	void		ChangeDevice	  ( );
@@ -67,6 +67,8 @@ private:
 	void		DrawInfo		( );
 	void		ProcessInput	  ( );
 	void		CheckBombs		( );
+	void		ProcessMenuButtons   ( );
+	void		NPCStartingPosition ( ); // Pentru a stabilii pozitia de inceput a NPC-ului
 
 	//-------------------------------------------------------------------------
 	// Private Static Functions For This Class
@@ -97,12 +99,12 @@ private:
 
 	BackBuffer*				m_pBBuffer;
 	CPlayer*				m_pPlayer;
+	CNonPlayer*				m_pNPC[MAX_NPCS];
 	CMap*					m_Map;	// Harta cu tot cu obiecte si coliziuni
 
 	CBomb*					m_pBomb;
 	
 	bool					F1Pressed;		// Pentru a putea desena pe ecran informatii precum FPS, etc.
-
 
 	MainMenu*				m_MMenu;
 	InGameMenu*				m_SMenu;

@@ -40,7 +40,7 @@ public:
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					UpdateBomb(float dt, int ID = 0);
+	void					UpdateBomb(float dt);
 	void					DrawBomb();
 	Vec2&					BombPosition();
 	Vec2&					BombVelocity();

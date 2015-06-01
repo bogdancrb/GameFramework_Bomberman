@@ -58,10 +58,10 @@ CBomb::~CBomb()
 		delete m_pBombExplosionSprite[index];
 }
 
-void CBomb::UpdateBomb(float dt, int ID)
+void CBomb::UpdateBomb(float dt)
 {
 	// Update sprite
-	m_pBombSprite->update(dt,ID);
+	m_pBombSprite->update(dt);
 }
 
 void CBomb::DrawBomb()
@@ -181,6 +181,7 @@ bool CBomb::BombColision(Vec2 Position, CMap* Map)
 		{
 			if (id == 1) // indestructable
 			{
+				// Daca pozitia exploziei este egala cu pozitia unui block indestructibil, returnam true pentru coliziune
 				if (Position == Map->IndesctructPosition(index))
 				{
 					return true;
@@ -189,6 +190,8 @@ bool CBomb::BombColision(Vec2 Position, CMap* Map)
 
 			if (id == 2) // destructable
 			{
+				// Daca pozitia exploziei este egala cu pozitia unui block destructibil si block-ul este vizibil (nu a fost distrus)
+				// Returnam true pentru coliziune si setam block-ul respectiv ca fiind invizibil
 				if (Position == Map->DesctructPosition(index) && Map->isDesctructVisible(index))
 				{
 					Map->isDesctructVisible(index) = false;
@@ -198,6 +201,7 @@ bool CBomb::BombColision(Vec2 Position, CMap* Map)
 		}
 	}
 
+	// Daca nu s-au facut coliziuni, returnam fals
 	return false;
 }
 

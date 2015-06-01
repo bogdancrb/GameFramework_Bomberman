@@ -40,12 +40,20 @@ using namespace std;
 #define DEG2RAD(deg) (PI * (deg) / 180.0)
 #define RAD2DEG(rad) ((rad) * 180.0 / PI)
 
-#define MAX_CRATE 10
-#define MAX_NPCS 10
-#define BULLET_SPEED 50
-#define EXPLOSION_SPEED 550 // Viteza de afisare a exploziei
-#define EXPLOSION_RANGE 3+3+1+3+3 // Pe cate bock-uri este extinsa explozia (3 sus + 3 jos + 1 centru + 3 stanga + 3 dreapta = 13)
+
+//------------------------[Valori modificabile]--------------------------------
 #define BLOCKSIZE 60 // Marimea unui block in pixeli (60x60)
-#define BOMB_TIMER 4*50 // Dupa cat timp sa explodeze o bomba (10*50 => 10 sec, 20*50 => 20 sec, etc.)
+
+#define MAX_CRATE 10 // Numarul maxim de cutii care sa cada din cer
+#define MAX_NPCS 8 // Numarul maxim de NPC-uri
+
+#define EXPLOSION_SPEED 3*50 // Viteza de afisare a exploziei (1*50 => 1 frame/sec, 2*50 => 2 frame/sec, etc.)
+#define EXPLOSION_RANGE 2+2+1+2+2 // Pe cate bock-uri este extinsa explozia (2 sus + 2 jos + 1 centru + 2 stanga + 2 dreapta = 9)
+#define BOMB_TIMER 3*50 // Dupa cat timp sa explodeze o bomba (10*50 => 10 sec, 20*50 => 20 sec, etc.)
+
+#define NPC_SPEED 1*50 // Viteza de schimbare a directiei NPC (1*50 => 1 block/sec, 2*50 => 2 block/sec, etc.)
+#define NPC_SPAWN_DISTANCE 3*BLOCKSIZE // Distanta minima in block-uri dintre jucator si NPC (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
+#define	NPC_FOLLOW_DISTANCE 3*BLOCKSIZE // Distanta in block-uri de la care NPC incepe sa urmareasca jucatorul (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
+//-----------------------------------------------------------------------------
 
 #endif // _MAIN_H_

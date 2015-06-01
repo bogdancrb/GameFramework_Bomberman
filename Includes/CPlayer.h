@@ -55,7 +55,7 @@ public:
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					Update(float dt, int ID = 0);
+	void					Update(float dt);
 	void					Draw();
 	void					Move(ULONG ulDirection, int ID = 0);
 
@@ -81,8 +81,6 @@ private:
 	// Private Variables for This Class.
 	//-------------------------------------------------------------------------
 	Sprite*					m_pSprite;
-	ESpeedStates			m_eSpeedState;
-	float					m_fTimer;
 	
 	bool					m_bExplosion;
 	AnimatedSprite*			m_pExplosionSprite;
@@ -96,6 +94,7 @@ public:
 	//-------------------------------------------------------------------------
 	//int						m_pPoints;
 	//int						m_pHealth;
+	bool						ResetPosition; // Pentru a reseta pozitia jucatorului la cea initiala
 };
 
 #endif // _CPLAYER_H_

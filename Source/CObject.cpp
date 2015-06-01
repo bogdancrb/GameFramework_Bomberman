@@ -54,10 +54,10 @@ CObject::~CObject()
 	delete m_pObjSprite;
 }
 
-void CObject::UpdateObj(float dt, int ID)
+void CObject::UpdateObj(float dt)
 {
 	// Update sprite
-	m_pObjSprite->update(dt,ID);
+	m_pObjSprite->update(dt);
 }
 
 void CObject::DrawObj()
