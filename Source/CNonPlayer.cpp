@@ -23,6 +23,7 @@ CNonPlayer::CNonPlayer(const BackBuffer *pBackBuffer, int ID)
 	{
 		m_pNPCSprite = new Sprite("data/characters/enemy.bmp", RGB(0xff,0x00,0xff));
 	}
+
 	if (ID == 1)
 	{
 		m_pNPCSprite = new Sprite("data/guns/bulletandmask.bmp", RGB(0xff,0x00,0xff));

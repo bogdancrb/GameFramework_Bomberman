@@ -38,6 +38,7 @@ CGameApp::CGameApp()
 		m_pNPC[index]			= NULL;
 
 	m_LastFrameRate = 0;
+	m_bActive = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -402,50 +403,63 @@ void CGameApp::ReleaseObjects( int dontDeleteBuff )
 void CGameApp::FrameAdvance()
 {
 	// Advance the timer
-	m_Timer.Tick( );
+	m_Timer.Tick(150);
 
 	// Skip if app is inactive
-	if ( !m_bActive ) return;
+	if (!m_bActive) {
 
-	// Poll & Process input devices
-	ProcessInput();
+		// Poll & Process input devices
+		ProcessInput();
 
-	// Verificam daca s-au apasat butoane pe ecran
-	ProcessMenuButtons();
+		// Verificam daca s-au apasat butoane pe ecran
+		ProcessMenuButtons();
 
-	if (!m_MMenu->m_Active)
-	{
-		// Animate the game objects
-		AnimateObjects();
-
-		// Daca jucatorul a murit, atunci resetam pozitia acestuia
-		if (m_pPlayer->ResetPosition)
-		{
-			SetupGameState();
-			m_pPlayer->ResetPosition = false;
-		}
-
-		// Detecteaza coliziune jucator - ziduri
-		m_pPlayer->PlayerColision(m_Map);
-
-		for (int index = 0; index < MAX_NPCS; index++)
-		{
-			if (m_pNPC[index])
-			{
-				// Punem NPC-ul in miscare
-				m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
-
-				// Detecteaza coliziune NPC - ziduri - bomba
-				m_pNPC[index]->NPCColision(m_Map, m_pBomb);
-			}
-		}
-
-		// Detecteaza daca vreo bomba a fost acivata
-		CheckBombs();
+		// Drawing the game objects
+		DrawObjects();
 	}
-	
-	// Drawing the game objects
-	DrawObjects();
+	else
+	{
+		// Poll & Process input devices
+		ProcessInput();
+
+		// Verificam daca s-au apasat butoane pe ecran
+		ProcessMenuButtons();
+
+
+		if (!m_MMenu->m_Active)
+		{
+			// Animate the game objects
+			AnimateObjects();
+
+			// Daca jucatorul a murit, atunci resetam pozitia acestuia
+			if (m_pPlayer->ResetPosition)
+			{
+				SetupGameState();
+				m_pPlayer->ResetPosition = false;
+			}
+
+			// Detecteaza coliziune jucator - ziduri
+			m_pPlayer->PlayerColision(m_Map);
+
+			for (int index = 0; index < MAX_NPCS; index++)
+			{
+				if (m_pNPC[index])
+				{
+					// Punem NPC-ul in miscare
+					m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
+
+					// Detecteaza coliziune NPC - ziduri - bomba
+					m_pNPC[index]->NPCColision(m_Map, m_pBomb);
+				}
+			}
+
+			// Detecteaza daca vreo bomba a fost acivata
+			CheckBombs();
+		}
+
+		// Drawing the game objects
+		DrawObjects();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -517,6 +531,7 @@ void CGameApp::ProcessMenuButtons()
 			{
 				// Setam menu secundar ca fiind activ
 				m_SMenu->m_Active = true;
+				m_bActive = false;
 			}
 
 			// Daca menu secundar este activ
@@ -530,6 +545,7 @@ void CGameApp::ProcessMenuButtons()
 					{
 						// Ascundem menu secundar
 						m_SMenu->m_Active = false;
+						m_bActive = true;
 					}
 
 					// Menu secundar - Restart
@@ -549,6 +565,7 @@ void CGameApp::ProcessMenuButtons()
 
 						// Ascundem menu-ul secundar
 						m_SMenu->m_Active = false;
+						m_bActive = true;
 					}
 
 					// Menu secundar - Main Menu
@@ -563,6 +580,7 @@ void CGameApp::ProcessMenuButtons()
 
 						// Menu principal este activ
 						m_MMenu->m_Active = true;
+						m_bActive = true;
 					}
 
 					// Menu secundar - Exit
@@ -711,6 +729,7 @@ void CGameApp::CheckBombs()
 							// Stergem NPC din memorie
 							delete m_pNPC[indexNPC];
 							m_pNPC[indexNPC] = NULL;
+							//m_pPlayer->m_pPoints += rand() % 30 + 20;
 						}
 					}
 				}
