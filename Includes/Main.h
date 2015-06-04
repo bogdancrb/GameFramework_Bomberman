@@ -51,7 +51,7 @@ using namespace std;
 #define EXPLOSION_RANGE 2+2+1+2+2 // Pe cate bock-uri este extinsa explozia (2 sus + 2 jos + 1 centru + 2 stanga + 2 dreapta = 9)
 #define BOMB_TIMER 3*50 // Dupa cat timp sa explodeze o bomba (10*50 => 10 sec, 20*50 => 20 sec, etc.)
 
-#define NPC_SPEED 1*50 // Viteza de schimbare a directiei NPC (1*50 => 1 block/sec, 2*50 => 2 block/sec, etc.)
+#define NPC_SPEED 0.7*50 // Viteza de schimbare a directiei NPC (1*50 => 1 block/sec, 2*50 => 2 block/sec, etc.)
 #define NPC_SPAWN_DISTANCE 3*BLOCKSIZE // Distanta minima in block-uri dintre jucator si NPC (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
 #define	NPC_FOLLOW_DISTANCE 3*BLOCKSIZE // Distanta in block-uri de la care NPC incepe sa urmareasca jucatorul (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
 //-----------------------------------------------------------------------------

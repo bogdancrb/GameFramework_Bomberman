@@ -45,7 +45,7 @@ CPlayer::CPlayer(const BackBuffer *pBackBuffer, int ID)
 	// Jucatorul se poate misca
 	m_pCanMove = true;
 
-	//m_pHealth = 100;
+	m_pPoints = 0;
 	ResetPosition = false;
 
 	is_dead = false;
@@ -73,15 +73,16 @@ void CPlayer::Update(float dt)
 	m_pSprite->update(dt);
 
 	int space = 1366 - 135;
-	for (Lives* life : m_pLives)
+
+	for (vector<Lives*>::iterator life = m_pLives.begin(); life != m_pLives.end(); ++life)
 	{
-		if (!life->removed)
+		if (!(*life)->removed)
 		{
-			life->Position().x = space;
-			life->Position().y = this->Height();
+			(*life)->Position().x = space;
+			(*life)->Position().y = this->Height();
 			space -= 2*this->Width();
 		}
-		life->Update(dt);
+		(*life)->Update(dt);
 	}
 }
 
@@ -96,9 +97,9 @@ void CPlayer::Draw()
 		m_pExplosionSprite->draw();
 	}
 
-	for (Lives* life : m_pLives)
+	for (vector<Lives*>::iterator life = m_pLives.begin(); life != m_pLives.end(); ++life)
 	{
-		life->Draw();
+		(*life)->Draw();
 	}
 }
 

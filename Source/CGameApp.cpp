@@ -38,7 +38,6 @@ CGameApp::CGameApp()
 		m_pNPC[index]			= NULL;
 
 	m_LastFrameRate = 0;
-	m_bActive = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -403,63 +402,50 @@ void CGameApp::ReleaseObjects( int dontDeleteBuff )
 void CGameApp::FrameAdvance()
 {
 	// Advance the timer
-	m_Timer.Tick(150);
+	m_Timer.Tick( );
 
 	// Skip if app is inactive
-	if (!m_bActive) {
+	if ( !m_bActive ) return;
 
-		// Poll & Process input devices
-		ProcessInput();
+	// Poll & Process input devices
+	ProcessInput();
 
-		// Verificam daca s-au apasat butoane pe ecran
-		ProcessMenuButtons();
+	// Verificam daca s-au apasat butoane pe ecran
+	ProcessMenuButtons();
 
-		// Drawing the game objects
-		DrawObjects();
-	}
-	else
+	if (!m_MMenu->m_Active)
 	{
-		// Poll & Process input devices
-		ProcessInput();
+		// Animate the game objects
+		AnimateObjects();
 
-		// Verificam daca s-au apasat butoane pe ecran
-		ProcessMenuButtons();
-
-
-		if (!m_MMenu->m_Active)
+		// Daca jucatorul a murit, atunci resetam pozitia acestuia
+		if (m_pPlayer->ResetPosition)
 		{
-			// Animate the game objects
-			AnimateObjects();
-
-			// Daca jucatorul a murit, atunci resetam pozitia acestuia
-			if (m_pPlayer->ResetPosition)
-			{
-				SetupGameState();
-				m_pPlayer->ResetPosition = false;
-			}
-
-			// Detecteaza coliziune jucator - ziduri
-			m_pPlayer->PlayerColision(m_Map);
-
-			for (int index = 0; index < MAX_NPCS; index++)
-			{
-				if (m_pNPC[index])
-				{
-					// Punem NPC-ul in miscare
-					m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
-
-					// Detecteaza coliziune NPC - ziduri - bomba
-					m_pNPC[index]->NPCColision(m_Map, m_pBomb);
-				}
-			}
-
-			// Detecteaza daca vreo bomba a fost acivata
-			CheckBombs();
+			SetupGameState();
+			m_pPlayer->ResetPosition = false;
 		}
 
-		// Drawing the game objects
-		DrawObjects();
+		// Detecteaza coliziune jucator - ziduri
+		m_pPlayer->PlayerColision(m_Map);
+
+		for (int index = 0; index < MAX_NPCS; index++)
+		{
+			if (m_pNPC[index])
+			{
+				// Punem NPC-ul in miscare
+				m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
+
+				// Detecteaza coliziune NPC - ziduri - bomba
+				m_pNPC[index]->NPCColision(m_Map, m_pBomb);
+			}
+		}
+
+		// Detecteaza daca vreo bomba a fost acivata
+		CheckBombs();
 	}
+	
+	// Drawing the game objects
+	DrawObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -531,7 +517,6 @@ void CGameApp::ProcessMenuButtons()
 			{
 				// Setam menu secundar ca fiind activ
 				m_SMenu->m_Active = true;
-				m_bActive = false;
 			}
 
 			// Daca menu secundar este activ
@@ -545,7 +530,6 @@ void CGameApp::ProcessMenuButtons()
 					{
 						// Ascundem menu secundar
 						m_SMenu->m_Active = false;
-						m_bActive = true;
 					}
 
 					// Menu secundar - Restart
@@ -565,7 +549,6 @@ void CGameApp::ProcessMenuButtons()
 
 						// Ascundem menu-ul secundar
 						m_SMenu->m_Active = false;
-						m_bActive = true;
 					}
 
 					// Menu secundar - Main Menu
@@ -580,7 +563,6 @@ void CGameApp::ProcessMenuButtons()
 
 						// Menu principal este activ
 						m_MMenu->m_Active = true;
-						m_bActive = true;
 					}
 
 					// Menu secundar - Exit
@@ -660,13 +642,13 @@ void CGameApp::DrawObjects()
 		if (m_pBomb != NULL)
 			m_pBomb->DrawBomb(); // Desenam bomba, daca aceasta a fost creata
 
-		m_Map->Draw(0, 0); // Desenare harta
-		
-		m_pPlayer->Draw();
-
 		for (int index = 0; index < MAX_NPCS; index++)
 			if (m_pNPC[index] != NULL)
 				m_pNPC[index]->DrawNPC();
+
+		m_Map->Draw(0, 0); // Desenare harta
+		
+		m_pPlayer->Draw();
 
 		// Generam pozitii random pentru NPC pe harta
 		NPCStartingPosition();
@@ -675,7 +657,7 @@ void CGameApp::DrawObjects()
 
 	DrawInfo();
 
-	if (m_pPlayer->get_if_is_dead() == true)
+	if (m_pPlayer != NULL && m_pPlayer->get_if_is_dead() == true)
 	{
 		PostQuitMessage(0);
 		//OR 	ReleaseObjects ( );	 AND return to main menu
@@ -729,7 +711,7 @@ void CGameApp::CheckBombs()
 							// Stergem NPC din memorie
 							delete m_pNPC[indexNPC];
 							m_pNPC[indexNPC] = NULL;
-							//m_pPlayer->m_pPoints += rand() % 30 + 20;
+							m_pPlayer->m_pPoints += rand() % 50 + 20;
 						}
 					}
 				}
@@ -836,6 +818,10 @@ void CGameApp::DrawInfo()
 	TCHAR DisplayInfo[255];
 	char ConvToString[255] = {0};
 	POINT		CursorPos;
+	HFONT		hFont, hOldFont;
+
+	SetTextColor(m_pBBuffer->getDC(), 0x00000000);
+	SetBkMode(m_pBBuffer->getDC(), OPAQUE);
 
 	if (F1Pressed) // Daca s-a apasat F1 atunci afisam niste date tehnice pe ecran
 	{
@@ -849,7 +835,7 @@ void CGameApp::DrawInfo()
 		strcat(DisplayInfo,", Y: "); // Adaugam in PlayerXY: "Player Real Pos X: %d, Y:"
 		itoa(m_pPlayer->Position().y,ConvToString,10); // Convertim pozitia jucatorului pe Y, din (int) in (char)
 		strcat(DisplayInfo,ConvToString); //  Adaugam pozitia in PlayerXY: "Player Real Pos X: %d, Y: %d"
-		TextOut(m_pBBuffer->getDC(), 10, 40, DisplayInfo, strlen(DisplayInfo)); // Afisam PlayerXY pe ecran
+		TextOut(m_pBBuffer->getDC(), 10, 50, DisplayInfo, strlen(DisplayInfo)); // Afisam PlayerXY pe ecran
 
 		strcpy(DisplayInfo,"Player Dec Pos X: ");
 		itoa(m_pPlayer->PlayerDecalPos().x,ConvToString,10);
@@ -857,7 +843,7 @@ void CGameApp::DrawInfo()
 		strcat(DisplayInfo,", Y: ");
 		itoa(m_pPlayer->PlayerDecalPos().y,ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
-		TextOut(m_pBBuffer->getDC(), 10, 70, DisplayInfo, strlen(DisplayInfo));
+		TextOut(m_pBBuffer->getDC(), 10, 80, DisplayInfo, strlen(DisplayInfo));
 
 		strcpy(DisplayInfo,"Player Old Pos X: ");
 		itoa(m_pPlayer->PlayerOldPos().x,ConvToString,10);
@@ -865,7 +851,7 @@ void CGameApp::DrawInfo()
 		strcat(DisplayInfo,", Y: ");
 		itoa(m_pPlayer->PlayerOldPos().y,ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
-		TextOut(m_pBBuffer->getDC(), 10, 100, DisplayInfo, strlen(DisplayInfo));
+		TextOut(m_pBBuffer->getDC(), 10, 110, DisplayInfo, strlen(DisplayInfo));
 
 		strcpy(DisplayInfo,"Player Vel X: ");
 		itoa(m_pPlayer->Velocity().x,ConvToString,10);
@@ -873,7 +859,7 @@ void CGameApp::DrawInfo()
 		strcat(DisplayInfo,", Y: ");
 		itoa(m_pPlayer->Velocity().y,ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
-		TextOut(m_pBBuffer->getDC(), 10, 130, DisplayInfo, strlen(DisplayInfo));
+		TextOut(m_pBBuffer->getDC(), 10, 140, DisplayInfo, strlen(DisplayInfo));
 
 		GetCursorPos(&CursorPos);
 		strcpy(DisplayInfo, "Cursor pos X: ");
@@ -882,16 +868,25 @@ void CGameApp::DrawInfo()
 		strcat(DisplayInfo, ", Y: ");
 		itoa(CursorPos.y, ConvToString, 10);
 		strcat(DisplayInfo, ConvToString);
-		TextOut(m_pBBuffer->getDC(), 10, 160, DisplayInfo, strlen(DisplayInfo));
+		TextOut(m_pBBuffer->getDC(), 10, 170, DisplayInfo, strlen(DisplayInfo));
 	}
 
-	/*strcpy(DisplayInfo,"Puncte: ");
-	itoa(m_pPlayer->m_pPoints,ToString,10);
-	strcat(DisplayInfo,ToString);
-	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-100, GetSystemMetrics(SM_CYSCREEN)-100, DisplayInfo, strlen(DisplayInfo));
+	if ( !m_MMenu->m_Active)
+	{
+		hFont = CreateFont(35, 0, 0, 0, FW_EXTRABOLD, 0, 0, 0, 0, 0, 0, 4, 0, "SYSTEM_FIXED_FONT");
+		SetTextColor(m_pBBuffer->getDC(), 0x00FFFFFF);
+		SetBkMode(m_pBBuffer->getDC(), TRANSPARENT);
 
-	strcpy(DisplayInfo,"Viata: ");
-	itoa(m_pPlayer->m_pHealth,ToString,10);
-	strcat(DisplayInfo,ToString);
-	TextOut(m_pBBuffer->getDC(), GetSystemMetrics(SM_CXSCREEN)-200, GetSystemMetrics(SM_CYSCREEN)-100, DisplayInfo, strlen(DisplayInfo));*/
+		// Select the variable stock font into the specified device context. 
+		hOldFont = (HFONT)SelectObject(m_pBBuffer->getDC(), hFont);
+
+		if (m_pPlayer != NULL)
+		{
+			strcpy(DisplayInfo,"Puncte: ");
+			itoa(m_pPlayer->m_pPoints,ConvToString,10);
+			strcat(DisplayInfo,ConvToString);
+			TextOut(m_pBBuffer->getDC(), 70, 15, DisplayInfo, strlen(DisplayInfo));
+		}
+		SelectObject(m_pBBuffer->getDC(), hOldFont);
+	}
 }

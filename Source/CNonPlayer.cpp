@@ -23,7 +23,6 @@ CNonPlayer::CNonPlayer(const BackBuffer *pBackBuffer, int ID)
 	{
 		m_pNPCSprite = new Sprite("data/characters/enemy.bmp", RGB(0xff,0x00,0xff));
 	}
-
 	if (ID == 1)
 	{
 		m_pNPCSprite = new Sprite("data/guns/bulletandmask.bmp", RGB(0xff,0x00,0xff));
@@ -190,7 +189,7 @@ void CNonPlayer::SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb)
 
 void CNonPlayer::NPCColision(CMap* Map, CBomb* Bomb)
 {
-	// Daca exista coliziune intre NPC, block si bomba
+	// Daca exista coliziune intre NPC, block sau bomba
 	if (NPCDetectColision(Map, Bomb, m_pNPCSprite->mPosition.x, m_pNPCSprite->mPosition.y))
 	{
 		// Setam pozitia NPC-ului la o pozitie anterioara si velocitatea pe 0

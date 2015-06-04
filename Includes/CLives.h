@@ -17,7 +17,7 @@ public:
 	Vec2&			Velocity();
 	int				Width(){ return m_lSprite->width(); }
 	int				Height(){ return m_lSprite->height(); }
-	bool			removed=false;
+	bool			removed;
 
 protected:
 	Sprite*			m_lSprite;

@@ -17,7 +17,7 @@
 #include "Sprite.h"
 #include "CBomb.h"
 #include "CMap.h"
-#include "Lives.h"
+#include "CLives.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -78,7 +78,7 @@ public:
 
 	//functie accesor --numarul initial de vieti ale jucatorului
 	int&					get_no_lives(){ return no_lives; }
-	std::vector<Lives*>		get_m_pLives(){ return m_pLives; }
+	vector<Lives*>			get_m_pLives(){ return m_pLives; }
 	bool&					get_if_is_dead(){ return is_dead; }
 
 	int						Width() { return m_pSprite->width(); }
@@ -107,8 +107,7 @@ public:
 	//-------------------------------------------------------------------------
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
-	//int						m_pPoints;
-	//int						m_pHealth;
+	long int					m_pPoints;
 	bool						ResetPosition; // Pentru a reseta pozitia jucatorului la cea initiala
 };
 
