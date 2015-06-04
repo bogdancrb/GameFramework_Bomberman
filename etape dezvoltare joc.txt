@@ -7,7 +7,7 @@
 7. distrugere inamici 				(v)
 8. menu (start, exit) 				(v)
 9. viata jucator (3 vieti) 			(v)
-10. puncte 					(-)
+10. puncte 					(v)
 11. portale random 				(-)
 12. 1 bonus level (cu tot cu mecanica) 		(-)
 13. power-ups (bomba speciala, extra viata)	(-)
