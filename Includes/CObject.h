@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 #include "Main.h"
 #include "Sprite.h"
+#include "CPlayer.h"
 
 //-----------------------------------------------------------------------------
 // Main Class Definitions
@@ -43,6 +44,8 @@ public:
 	bool					Visible();
 	int						Width();
 	int						Height();
+
+	bool					ObjColision(CPlayer* Player);
 
 	void					ObjExplode();
 private:

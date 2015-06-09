@@ -44,8 +44,15 @@ using namespace std;
 //------------------------[Valori modificabile]--------------------------------
 #define BLOCKSIZE 60 // Marimea unui block in pixeli (60x60)
 
-#define MAX_CRATE 10 // Numarul maxim de cutii care sa cada din cer
-#define MAX_NPCS 8 // Numarul maxim de NPC-uri
+#define MAX_CRATE 25 // Numarul maxim de cutii/bombe care sa cada din cer
+#define MAX_NPCS 3 // Numarul maxim de NPC-uri
+#define MAX_LEVELS 1 // Numarul maxim de normal game levels
+
+// Nivelele bonus si boss (cele bonus sunt negative pentru a putea lucra fara probleme)
+#define BONUS_LEVEL1 -1
+#define BONUS_LEVEL2 -2
+#define	BOSS_LEVEL 999
+#define TEST_LEVEL 0
 
 #define EXPLOSION_SPEED 3*50 // Viteza de afisare a exploziei (1*50 => 1 frame/sec, 2*50 => 2 frame/sec, etc.)
 #define EXPLOSION_RANGE 2+2+1+2+2 // Pe cate bock-uri este extinsa explozia (2 sus + 2 jos + 1 centru + 2 stanga + 2 dreapta = 9)
@@ -53,7 +60,7 @@ using namespace std;
 
 #define NPC_SPEED 0.7*50 // Viteza de schimbare a directiei NPC (1*50 => 1 block/sec, 2*50 => 2 block/sec, etc.)
 #define NPC_SPAWN_DISTANCE 3*BLOCKSIZE // Distanta minima in block-uri dintre jucator si NPC (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
-#define	NPC_FOLLOW_DISTANCE 3*BLOCKSIZE // Distanta in block-uri de la care NPC incepe sa urmareasca jucatorul (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
+#define	NPC_FOLLOW_DISTANCE 4*BLOCKSIZE // Distanta in block-uri de la care NPC incepe sa urmareasca jucatorul (ex: 1*BLOCKSIZE = 60, 2*BLOCKSIZE = 120, etc.)
 //-----------------------------------------------------------------------------
 
 #endif // _MAIN_H_

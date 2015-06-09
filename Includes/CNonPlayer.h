@@ -53,7 +53,7 @@ public:
 	void					SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb);
 
 	void					NPCColision(CMap* Map, CBomb* Bomb);	// Detectare coliziune intre jucator si block de pe harta
-	bool					NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY);
+	int						NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY);
 
 	void					NPCExplode(int ID = 0);
 	bool					NPCAdvanceExplosion();

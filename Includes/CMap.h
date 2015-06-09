@@ -83,12 +83,15 @@ public:
 	double										GetXOffset() { return xOffset; }
 	double										GetYOffset() { return yOffset; }
 	Sprite*										GetWall(int i) { return m_Wall[i]; }
+	Sprite*										GetDestruct(int i) { return m_destructable_box[i]; }
 
 	Vec2&										WallPosition(int i) { return m_Wall[i]->mPosition; }
 	Vec2&										IndesctructPosition(int i) { return m_indestructable_box[i]->mPosition; }
 	Vec2&										DesctructPosition(int i) { return m_destructable_box[i]->mPosition; }
+	Vec2&										PortalPosition() { return m_Portal->mPosition; }
 
 	bool&										isDesctructVisible(int i) { return m_destructable_box[i]->isSpriteVisible; }
+	bool&										isPortalVisible() { return m_Portal->isSpriteVisible; }
 
 	void										GeneratePowerups();
 
@@ -101,6 +104,7 @@ private:
 	vector<Sprite*>								m_Wall;
 	vector<Sprite*>								m_indestructable_box;
 	vector<Sprite*>								m_destructable_box;
+	Sprite*										m_Portal;
 
 	double										xOffset;
 	double										yOffset;
@@ -115,6 +119,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
+	void										GeneratePortal();
+
 	vector<vector<Object*>>						m_MapMatrix;	// Matrice pentru incarcare harta
 
 	vector<int>									NrOfWalls;	// Numarul de block-uri de fiecare tip

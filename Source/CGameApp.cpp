@@ -12,7 +12,6 @@
 #include "CGameApp.h"
 
 extern HINSTANCE g_hInst;
-float PlayerOldPosX, PlayerOldPosY;
 
 //-----------------------------------------------------------------------------
 // CGameApp Member Functions
@@ -23,6 +22,8 @@ float PlayerOldPosX, PlayerOldPosY;
 //-----------------------------------------------------------------------------
 CGameApp::CGameApp()
 {
+	//PlaySound("data/menu/song1.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
+
 	// Reset / Clear all required values
 	m_hWnd			= NULL;
 	m_hIcon			= NULL;
@@ -35,9 +36,14 @@ CGameApp::CGameApp()
 	m_SMenu			= NULL;
 
 	for (int index = 0; index < MAX_NPCS; index++)
-		m_pNPC[index]			= NULL;
+		m_pNPC[index] = NULL;
+
+	for (int index = 0; index < MAX_CRATE; index++)
+		m_pCratesAndBombs[index] = NULL;
 
 	m_LastFrameRate = 0;
+
+	m_CurrentGameLevel = m_LoadGameLevel = 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -278,10 +284,16 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 				m_pPlayer->Explode();
 				break;*/
 			case VK_SPACE: // Daca jucatorul apasa tasta SPACE
-				m_pPlayer->PlaceBomb(&m_pBomb,m_pBBuffer); // Plasam bomba pe harta
+				if ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL)
+					m_pPlayer->PlaceBomb(&m_pBomb,m_pBBuffer); // Plasam bomba pe harta
 				break;
 			case VK_F1:
 				F1Pressed ? F1Pressed = false : F1Pressed = true;
+				break;
+			case VK_F2:
+				// Folosit doar pentru teste
+				m_LoadGameLevel = TEST_LEVEL;
+				LoadLevel();
 				break;
 			}
 			break;
@@ -324,6 +336,8 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 //-----------------------------------------------------------------------------
 bool CGameApp::BuildObjects()
 {
+	bool ok;
+
 	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight); 
 
 	m_pPlayer = new CPlayer(m_pBBuffer);
@@ -331,15 +345,61 @@ bool CGameApp::BuildObjects()
 	for (int index = 0; index < MAX_NPCS; index++)
 		m_pNPC[index] = new CNonPlayer(m_pBBuffer);
 
+	for (int index = 0; index < MAX_CRATE; index++)
+		m_pCratesAndBombs[index] = new CObject(m_pBBuffer);
+
 	if (m_MMenu == NULL)
 		m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
 
-	m_Map = new CMap("data/1.gamemap", m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
-	
-	if(!m_imgBackground.LoadBitmapFromFile("data/background/background1.bmp", GetDC(m_hWnd)))
-		return false;
+	ok = LoadLevel(); // Incarcam nivelul (harta + background)
 
 	// Success!
+	return ok;
+}
+
+//-----------------------------------------------------------------------------
+// Name : LoadLevel ()
+// Desc : Incarcam nivelul in functie de m_LoadGameLevel
+//-----------------------------------------------------------------------------
+bool CGameApp::LoadLevel()
+{
+	char mapName[255], bgName[255], mapNr[20];
+
+	itoa(m_LoadGameLevel,mapNr,10);
+
+	if (m_LoadGameLevel >= 1 && m_LoadGameLevel != BOSS_LEVEL)
+	{
+		strcpy(mapName,"data/"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
+		
+		// Incarcam harta doar daca nu exista alta incarcata momentan
+		if (m_Map == NULL)
+			m_Map = new CMap(mapName, m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
+
+		m_CurrentGameLevel = m_LoadGameLevel;
+	}
+	else if (m_LoadGameLevel <= BONUS_LEVEL1)
+	{
+		strcpy(mapName,"data/bonus"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
+
+		m_BonusMap = new CMap(mapName, m_pBBuffer);
+
+	}
+	else if (m_LoadGameLevel == BOSS_LEVEL)
+	{
+		strcpy(mapName,"data/"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
+
+		m_BossMap = new CMap(mapName, m_pBBuffer);
+	}
+	else if (m_LoadGameLevel == TEST_LEVEL)
+	{
+		m_Map = new CMap("data/test.gamemap", m_pBBuffer);
+	}
+
+	strcpy(bgName,"data/background/background"); strcat(bgName,mapNr); strcat(bgName,".bmp");
+
+	if(!m_imgBackground.LoadBitmapFromFile(bgName, GetDC(m_hWnd)))
+		return false;
+
 	return true;
 }
 
@@ -349,14 +409,30 @@ bool CGameApp::BuildObjects()
 //-----------------------------------------------------------------------------
 void CGameApp::SetupGameState()
 {
-	//PlaySound("data/menu/song1.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
-
 	if (!m_MMenu->m_Active)
 	{
-		m_pPlayer->Position() = Vec2(390, 690);
+		if ( (m_LoadGameLevel == 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) // Level 1 + level test
+		{
+			m_pPlayer->Position() = Vec2(390, 690);
 
-		// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
-		m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+			// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
+			m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+		}
+		else if (m_LoadGameLevel <= BONUS_LEVEL1) // Levele bonus
+		{
+			m_pPlayer->Position() = Vec2(690, 690);
+
+			m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+
+			for (int index = 0; index < MAX_CRATE; index++)
+				m_pCratesAndBombs[index]->StartMoving();
+		}
+		else if (m_LoadGameLevel == BOSS_LEVEL) // Level boss
+		{
+			m_pPlayer->Position() = Vec2(690, 690);
+
+			m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+		}
 	}
 }
 
@@ -382,10 +458,31 @@ void CGameApp::ReleaseObjects( int dontDeleteBuff )
 		}
 	}
 
+	for (int index = 0; index < MAX_CRATE; index++)
+	{
+		if(m_pCratesAndBombs[index] != NULL)
+		{
+			delete m_pCratesAndBombs[index];
+			m_pCratesAndBombs[index] = NULL;
+		}
+	}
+
 	if(m_Map != NULL)
 	{
 		delete m_Map;
 		m_Map = NULL;
+	}
+
+	if(m_BonusMap != NULL)
+	{
+		delete m_BonusMap;
+		m_BonusMap = NULL;
+	}
+
+	if(m_BossMap != NULL)
+	{
+		delete m_BossMap;
+		m_BossMap = NULL;
 	}
 
 	if(m_pBBuffer != NULL && !dontDeleteBuff)
@@ -393,6 +490,8 @@ void CGameApp::ReleaseObjects( int dontDeleteBuff )
 		delete m_pBBuffer;
 		m_pBBuffer = NULL;
 	}
+
+	m_LoadGameLevel = m_CurrentGameLevel;
 }
 
 //-----------------------------------------------------------------------------
@@ -425,23 +524,48 @@ void CGameApp::FrameAdvance()
 			m_pPlayer->ResetPosition = false;
 		}
 
-		// Detecteaza coliziune jucator - ziduri
-		m_pPlayer->PlayerColision(m_Map);
-
-		for (int index = 0; index < MAX_NPCS; index++)
+		if ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) // Levele principale + level test
 		{
-			if (m_pNPC[index])
-			{
-				// Punem NPC-ul in miscare
-				m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
+			// Detecteaza coliziune [jucator - ziduri]
+			m_pPlayer->PlayerColision(m_Map);
 
-				// Detecteaza coliziune NPC - ziduri - bomba
-				m_pNPC[index]->NPCColision(m_Map, m_pBomb);
+			for (int index = 0; index < MAX_NPCS; index++)
+			{
+				if (m_pNPC[index])
+				{
+					// Punem NPC-ul in miscare, cu detecare daca jucatorul este prin apropiere si daca se face coliziune [NPC - jucator]
+					m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
+
+					// Detecteaza coliziune [NPC - ziduri - bomba]
+					m_pNPC[index]->NPCColision(m_Map, m_pBomb);
+				}
+			}
+
+			// Detecteaza daca vreo bomba a fost acivata si daca exista coliziune intre [explozie - NPC - jucator]
+			CheckBombs();
+		}
+		else if (m_LoadGameLevel <= BONUS_LEVEL1) // Levele bonus
+		{
+			m_pPlayer->PlayerColision(m_BonusMap);
+
+			for (int index = 0; index < MAX_CRATE; index++)
+			{
+				// Daca o bomba a facut coliziune cu jucatorul
+				if(m_pCratesAndBombs[index]->ObjColision(m_pPlayer))
+				{
+					// Incarcam nivelul princpal la care ne aflam
+					m_LoadGameLevel = m_CurrentGameLevel;
+					LoadLevel();
+				}
 			}
 		}
+		else if (m_LoadGameLevel != BOSS_LEVEL) // Level boss
+		{
 
-		// Detecteaza daca vreo bomba a fost acivata
-		CheckBombs();
+		}
+
+		// Verificam diferite pozitii legate de jucator
+		CheckPositions();
 	}
 	
 	// Drawing the game objects
@@ -465,13 +589,13 @@ void CGameApp::ProcessInput( )
 		// Check the relevant keys
 		if (m_pPlayer->CanMove()) // Verificam daca jucatorul se poate misca
 		{
-			if ( pKeyBuffer[ VK_UP ] & 0xF0 )
+			if ( (pKeyBuffer[ VK_UP ] & 0xF0) && (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL)
 			{
 				Direction |= CPlayer::DIR_FORWARD;
 				m_pPlayer->PlayerOldPos() = m_pPlayer->Position(); // Memoram vechea pozitie a jucatorului
 				m_pPlayer->CanMove() = false; // Jucatorul nu se mai poate misca in alte directii
 			}
-			else if ( pKeyBuffer[ VK_DOWN ] & 0xF0 )
+			else if ( (pKeyBuffer[ VK_DOWN ] & 0xF0) && (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL)
 			{
 				Direction |= CPlayer::DIR_BACKWARD;
 				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
@@ -588,6 +712,9 @@ void CGameApp::ProcessMenuButtons()
 				// Ascundem menu principal
 				m_MMenu->m_Active = false;
 
+				delete m_Map;
+				m_Map = NULL;
+
 				//Incarcam obiectele
 				BuildObjects();
 
@@ -616,8 +743,11 @@ void CGameApp::AnimateObjects()
 	m_pPlayer->Update(m_Timer.GetTimeElapsed());
 
 	for (int index = 0; index < MAX_NPCS; index++)
-		if (m_pNPC[index] != NULL)
-			m_pNPC[index]->UpdateNPC(m_Timer.GetTimeElapsed());
+			if (m_pNPC[index] != NULL)
+				m_pNPC[index]->UpdateNPC(m_Timer.GetTimeElapsed());
+
+	for (int index = 0; index < MAX_CRATE; index++)
+		m_pCratesAndBombs[index]->UpdateObj(m_Timer.GetTimeElapsed());
 
 	if (m_pBomb != NULL)
 		m_pBomb->UpdateBomb(m_Timer.GetTimeElapsed());
@@ -631,32 +761,56 @@ void CGameApp::DrawObjects()
 {
 	m_pBBuffer->reset();
 
+	// Daca menu principal este activ
 	if (m_MMenu->m_Active)
 	{
+		// Afisam menu principal
 		m_MMenu->Draw();
 	}
 	else
 	{
 		m_imgBackground.Paint(m_pBBuffer->getDC(), 0, 0);
 
-		if (m_pBomb != NULL)
-			m_pBomb->DrawBomb(); // Desenam bomba, daca aceasta a fost creata
+		if ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) // Levele principale + level test
+		{
+			// Desenam bomba, daca aceasta a fost creata
+			if (m_pBomb != NULL)
+				m_pBomb->DrawBomb();
 
-		for (int index = 0; index < MAX_NPCS; index++)
-			if (m_pNPC[index] != NULL)
-				m_pNPC[index]->DrawNPC();
+			// Desenam NPC-urile
+			for (int index = 0; index < MAX_NPCS; index++)
+				if (m_pNPC[index] != NULL)
+					m_pNPC[index]->DrawNPC();
 
-		m_Map->Draw(0, 0); // Desenare harta
-		
+			m_Map->GeneratePortal(); // Generare portal random pe harta
+			m_Map->Draw(0,0); // Desenare harta
+
+			// Generam pozitii random pentru NPC pe harta, daca este cazul
+			NPCStartingPosition();
+		}
+		else if (m_LoadGameLevel <= BONUS_LEVEL1) // Levele bonus
+		{
+			for (int index = 0; index < MAX_CRATE; index++)
+				if (m_pCratesAndBombs[index]->Visible())
+					m_pCratesAndBombs[index]->DrawObj();
+
+			m_BonusMap->Draw(0,0); // Desenare harta bonus
+		}
+		else if (m_LoadGameLevel == BOSS_LEVEL) // Level boss
+		{
+
+		}
+
 		m_pPlayer->Draw();
 
-		// Generam pozitii random pentru NPC pe harta
-		NPCStartingPosition();
+		// Afisam menu secundar
 		m_SMenu->Draw();
 	}
 
+	// Afisam informatii legate de FPS etc. daca s-a apasat F1
 	DrawInfo();
 
+	// Daca jucatorul a murit
 	if (m_pPlayer != NULL && m_pPlayer->get_if_is_dead() == true)
 	{
 		PostQuitMessage(0);
@@ -668,7 +822,7 @@ void CGameApp::DrawObjects()
 
 //-----------------------------------------------------------------------------
 // Name : CheckBombs () (Private)
-// Desc : Checks if the bombs are active or not
+// Desc : Verificam daca bombele sunt active sau nu, plus coliziunea cu explozia
 //-----------------------------------------------------------------------------
 void CGameApp::CheckBombs()
 {
@@ -688,24 +842,25 @@ void CGameApp::CheckBombs()
 			SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
 			m_pBomb->BombExplode(m_Map);
 			BombTimer = 0;
-			
-			// Coliziuni cu explozia bombei
+
+			// Verificare coliziuni [explozie - NPC - jucator]
 			for (int indexBomb = 0; indexBomb < EXPLOSION_RANGE; indexBomb++)
 			{
-				// Daca (pozitia jucatorului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre jucator si explozie
+				// Daca (pozitia jucatorului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre [jucator - explozie]
 				if ((abs(m_pPlayer->Position().x - m_pBomb->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pPlayer->Position().y - m_pBomb->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune jucator & explozie
 				{
 					// Setam ca jucatorul a murit
 					m_pPlayer->ResetPosition = true;
-					this->m_pPlayer->get_m_pLives().back()->removed = true;
+					m_pPlayer->get_m_pLives().back()->removed = true;
 					m_pPlayer->Killed();
+					break;
 				}
 
 				for (int indexNPC = 0; indexNPC < MAX_NPCS; indexNPC++)
 				{
 					if (m_pNPC[indexNPC] != NULL)
 					{
-						// Daca (pozitia NPC-ului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre NPC si explozie
+						// Daca (pozitia NPC-ului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre [NPC - explozie]
 						if ((abs(m_pNPC[indexNPC]->NPCPosition().x - m_pBomb->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pNPC[indexNPC]->NPCPosition().y - m_pBomb->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune NPC & explozie
 						{
 							// Stergem NPC din memorie
@@ -809,6 +964,36 @@ void CGameApp::NPCStartingPosition()
 }
 
 //-----------------------------------------------------------------------------
+// Name : CheckPositions () (Private)
+// Desc : Verificam diferite pozitii legate de jucator
+//-----------------------------------------------------------------------------
+void CGameApp::CheckPositions()
+{
+	// Daca pozitia jucatorului este egala cu cea a portalului si nu ne aflam intr-un nivel bonus/boss si portalul este vizibil
+	if ( m_pPlayer->Position() == m_Map->PortalPosition() 
+		&& ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) 
+		&& m_Map->isPortalVisible()
+		)
+	{
+		// Selectam un nivel bonus random
+		//int selectBonusLevel = rand() % BONUS_LEVEL2 + BONUS_LEVEL1;
+		int selectBonusLevel = BONUS_LEVEL1;
+
+		// Setam portalul ca fiind invizibil
+		m_Map->isPortalVisible() = false;
+
+		// Setam ca ne aflam in nivelul bonus ales random
+		m_LoadGameLevel = selectBonusLevel;
+
+		// Incarcam harta si background
+		LoadLevel();
+
+		// Pozitionam jucatorul 
+		SetupGameState();
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Name : DrawInfo () (Private)
 // Desc : Draws the game FPS, COORDONATES etc.
 //-----------------------------------------------------------------------------
@@ -871,22 +1056,22 @@ void CGameApp::DrawInfo()
 		TextOut(m_pBBuffer->getDC(), 10, 170, DisplayInfo, strlen(DisplayInfo));
 	}
 
-	if ( !m_MMenu->m_Active)
-	{
-		hFont = CreateFont(35, 0, 0, 0, FW_EXTRABOLD, 0, 0, 0, 0, 0, 0, 4, 0, "SYSTEM_FIXED_FONT");
-		SetTextColor(m_pBBuffer->getDC(), 0x00FFFFFF);
-		SetBkMode(m_pBBuffer->getDC(), TRANSPARENT);
+	//if ( !m_MMenu->m_Active)
+	//{
+	//	hFont = CreateFont(35, 0, 0, 0, FW_EXTRABOLD, 0, 0, 0, 0, 0, 0, 4, 0, "SYSTEM_FIXED_FONT");
+	//	SetTextColor(m_pBBuffer->getDC(), 0x00FFFFFF);
+	//	SetBkMode(m_pBBuffer->getDC(), TRANSPARENT);
 
-		// Select the variable stock font into the specified device context. 
-		hOldFont = (HFONT)SelectObject(m_pBBuffer->getDC(), hFont);
+	//	// Select the variable stock font into the specified device context. 
+	//	hOldFont = (HFONT)SelectObject(m_pBBuffer->getDC(), hFont);
 
-		if (m_pPlayer != NULL)
-		{
-			strcpy(DisplayInfo,"Puncte: ");
-			itoa(m_pPlayer->m_pPoints,ConvToString,10);
-			strcat(DisplayInfo,ConvToString);
-			TextOut(m_pBBuffer->getDC(), 70, 15, DisplayInfo, strlen(DisplayInfo));
-		}
-		SelectObject(m_pBBuffer->getDC(), hOldFont);
-	}
+	//	if (m_pPlayer != NULL)
+	//	{
+	//		strcpy(DisplayInfo,"Puncte: ");
+	//		itoa(m_pPlayer->m_pPoints,ConvToString,10);
+	//		strcat(DisplayInfo,ConvToString);
+	//		TextOut(m_pBBuffer->getDC(), 70, 15, DisplayInfo, strlen(DisplayInfo));
+	//	}
+	//	SelectObject(m_pBBuffer->getDC(), hOldFont);
+	//}
 }

@@ -15,7 +15,7 @@
 #include "Main.h"
 #include "CTimer.h"
 #include "CPlayer.h"
-//#include "CObject.h"
+#include "CObject.h"
 #include "CNonPlayer.h"
 #include "CBomb.h"
 #include "CMap.h"
@@ -66,9 +66,13 @@ private:
 	void		DrawObjects	   ( );
 	void		DrawInfo		( );
 	void		ProcessInput	  ( );
-	void		CheckBombs		( );
 	void		ProcessMenuButtons   ( );
+	void		CheckBombs		( ); // Verificam daca bombele sunt active sau nu, plus coliziunea cu explozia
 	void		NPCStartingPosition ( ); // Pentru a stabilii pozitia de inceput a NPC-ului
+	void		CheckPositions	( ); // Verificam diferite pozitii legate de jucator
+	bool		LoadLevel		 ( ); // Incarcarea nivelurilor
+	void		LoadGame		( ); // Incarcarea jocului din fisier
+	void		SaveGame	  ( ); // Salvarea jocului in fisier
 
 	//-------------------------------------------------------------------------
 	// Private Static Functions For This Class
@@ -100,7 +104,11 @@ private:
 	BackBuffer*				m_pBBuffer;
 	CPlayer*				m_pPlayer;
 	CNonPlayer*				m_pNPC[MAX_NPCS];
-	CMap*					m_Map;	// Harta cu tot cu obiecte si coliziuni
+	CObject*				m_pCratesAndBombs[MAX_CRATE];
+
+	CMap*					m_Map;	// Harta cu tot cu obiecte si coliziuni ziduri
+	CMap*					m_BonusMap;	// Harta bonus cu tot cu obiecte si coliziuni ziduri
+	CMap*					m_BossMap;	// Harta cu tot cu obiecte si coliziuni ziduri
 
 	CBomb*					m_pBomb;
 	
@@ -108,6 +116,9 @@ private:
 
 	MainMenu*				m_MMenu;
 	InGameMenu*				m_SMenu;
+
+	int						m_LoadGameLevel; // Folosim pentru a trece dintr-un nivel in altul
+	int						m_CurrentGameLevel; // Folosim pentru a memora nivelul principal
 };
 
 #endif // _CGAMEAPP_H_

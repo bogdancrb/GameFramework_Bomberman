@@ -1,8 +1,6 @@
 #include "Sprite.h"
 
 extern HINSTANCE g_hInst;
-Vec2 PlayerPos;
-Vec2 PlayerVel;
 
 Sprite::Sprite(int imageID, int maskID)
 {

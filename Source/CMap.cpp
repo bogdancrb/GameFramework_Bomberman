@@ -39,6 +39,11 @@ CMap::CMap(const char* FileName, BackBuffer * Buffer)
 		m_destructable_box[index]->setBackBuffer(m_BgBuffer);
 	}
 
+	m_Portal = new Sprite("data/objects/portal.bmp", RGB(0xff, 0x00, 0xff));
+	m_Portal->setBackBuffer(m_BgBuffer);
+
+	m_Portal->isSpriteVisible = true;
+
 	xOffset = 0;
 	yOffset = 0;
 }
@@ -115,7 +120,7 @@ void CMap::Draw(double x, double y)
 {
 	xOffset = x;
 	yOffset = y;
-	
+
 	//DrawBackground();
 	DrawEnviroment();
 }
@@ -195,6 +200,20 @@ Object* CMap::GetElement(Vec2 pos)
 void CMap::Change(char val, int i, int j)   //updateaza spriteul dupa coliziuni
 {
 	m_MapMatrix[i][j]->m_Code = val;
+}
+
+void CMap::GeneratePortal()
+{
+	if (NrOfWalls[2] != NULL)
+	{
+		int randDestructIndex = rand() % NrOfWalls[2];
+
+		if (m_Portal->mPosition == Vec2(0,0))
+			m_Portal->mPosition = m_destructable_box[randDestructIndex]->mPosition;
+
+		if (m_Portal->isSpriteVisible)
+			m_Portal->draw();
+	}
 }
 
 //----------------------------------------------[Object class] -------------------------------------------------

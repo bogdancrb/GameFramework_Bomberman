@@ -40,9 +40,6 @@ public:
 		double Distance(Vec2 v) const;		// Distance
 };
 
-extern Vec2 PlanePos;
-extern Vec2 PlaneVel;
-
 Vec2 Polar(double r, double radians);
 double PrincipleAngle(double radians);
 #endif // VEC2_H

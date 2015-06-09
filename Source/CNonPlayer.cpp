@@ -199,7 +199,7 @@ void CNonPlayer::NPCColision(CMap* Map, CBomb* Bomb)
 	}
 }
 
-bool CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY)
+int CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY)
 {
 	for (int id = 0; id < 3; id++)
 	{
@@ -211,14 +211,14 @@ bool CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double P
 				// Avem (BLOCKSIZE-5) deoarece se creeaza un bug la unele margini si trebuie scazut 1 pixel
 				if ((abs(PosX - Map->WallPosition(index).x) < BLOCKSIZE-5 && abs(Map->WallPosition(index).y - PosY) < BLOCKSIZE-5))
 				{
-					return true;
+					return 1; // returnam 1 ca avem coliziune cu zid
 				} 
 			}
 			else if (id == 1) // indesctrutable
 			{
 				if ((abs(PosX - Map->IndesctructPosition(index).x) < BLOCKSIZE-5 && abs(Map->IndesctructPosition(index).y - PosY) < BLOCKSIZE-5))
 				{
-					return true;
+					return 1;
 				}
 			}
 			else if (id == 2) // destructable
@@ -226,7 +226,7 @@ bool CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double P
 				
 				if (((abs(PosX - Map->DesctructPosition(index).x) < BLOCKSIZE-5 && abs(Map->DesctructPosition(index).y - PosY) < BLOCKSIZE-5)) && Map->isDesctructVisible(index))
 				{
-					return true;
+					return 1;
 				}
 			}
 		}
@@ -235,10 +235,10 @@ bool CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double P
 	if (Bomb != NULL)
 		// Daca (pozitia NPC-ului - pozitia bombei) au o diferenta de (BLOCKSIZE-5), inseamna ca NPC-ul o sa intalneasca o bomba
 		if ((abs(PosX - Bomb->BombPosition().x) < BLOCKSIZE-5 && abs(Bomb->BombPosition().y - PosY) < BLOCKSIZE-5))
-			return true;
+			return 2; // returnam 2 ca avem coliziune cu bomba
 
-	// Daca nu s-au facut coliziuni, returnam fals
-	return false;
+	// Daca nu s-au facut coliziuni, returnam 0
+	return 0;
 }
 
 Vec2& CNonPlayer::NPCPosition()

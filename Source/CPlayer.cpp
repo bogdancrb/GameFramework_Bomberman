@@ -265,21 +265,21 @@ bool CPlayer::AdvanceExplosion()
 
 void CPlayer::Killed()
 {
-	for (int i = this->m_pLives.size(); i >0; i--)
+	for (int i = m_pLives.size(); i >0; i--)
 	{
 		//Lives* life = this->m_pLives.at(i);
-		if (!this->m_pLives[i - 1]->removed == false)
+		if (!m_pLives[i - 1]->removed == false)
 		{
-			this->m_pLives[i-1]->removed = true;
-			this->m_pLives[i - 1]->Position().y = -2000;
-			delete m_pLives[i - 1];
-			m_pLives[i - 1] = NULL;
+			m_pLives[i-1]->removed = true;
+			//m_pLives[i-1]->Position().y = -2000;
+			delete m_pLives[i-1];
+			m_pLives[i-1] = NULL;
 			m_pLives.erase(m_pLives.begin() + i - 1);
 		}
 	}
-	if (this->m_pLives.size() == 0)
+	if (m_pLives.size() == 0)
 	{
-		this->is_dead = true;
+		is_dead = true;
 		//PostQuitMessage(0);
 	}
 }
