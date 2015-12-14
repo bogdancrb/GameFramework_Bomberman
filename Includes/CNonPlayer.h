@@ -41,7 +41,7 @@ public:
 	void					UpdateNPC(float dt);
 	void					DrawNPC();
 
-	void					NPCMove(CPlayer* Player, CMap* Map, CBomb* Bomb);
+	void					NPCMove(CPlayer* Player, CMap* Map, vector<CBomb*> Bomb, int ID = 0);
 
 	Vec2&					NPCPosition();
 	Vec2&					NPCOldPosition();
@@ -50,10 +50,10 @@ public:
 
 	bool&					Visible();
 
-	void					SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb);
+	void					SelectVelocity(CPlayer* Player, CMap* Map, vector<CBomb*> Bomb);
 
-	void					NPCColision(CMap* Map, CBomb* Bomb);	// Detectare coliziune intre jucator si block de pe harta
-	int						NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY);
+	void					NPCColision(CMap* Map, vector<CBomb*> Bomb);	// Detectare coliziune intre jucator si block de pe harta
+	int						NPCDetectColision(CMap* Map, vector<CBomb*> Bomb, double PosX, double PosY);
 
 	void					NPCExplode(int ID = 0);
 	bool					NPCAdvanceExplosion();

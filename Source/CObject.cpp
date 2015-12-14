@@ -36,7 +36,7 @@ CObject::CObject(const BackBuffer *pBackBuffer)
 		}
 		else
 		{
-			strcpy(img,"data/objects/bomb.bmp");
+			strcpy(img,"data/objects/bomb_bonus.bmp");
 		}
 	}
 	else
@@ -85,10 +85,10 @@ void CObject::StartMoving()
 
 	m_pObjSprite->mPosition = Vec2(x,y);
 
-	if (strcmpi(m_pObjSprite->fileName,"data/objects/bomb.bmp") == 0)
-		m_pObjSprite->mVelocity.y = rand() % 200 + 150;
+	if (strcmpi(m_pObjSprite->fileName,"data/objects/bomb_bonus.bmp") == 0)
+		m_pObjSprite->mVelocity.y = rand() % 400 + 250;
 	else
-		m_pObjSprite->mVelocity.y = rand() % 60 + 30;
+		m_pObjSprite->mVelocity.y = rand() % 150 + 100;
 }
 
 bool CObject::ObjColision(CPlayer* Player)
@@ -114,9 +114,8 @@ bool CObject::ObjColision(CPlayer* Player)
 			Player->m_pPoints += rand() % 50 + 20;
 			m_pObjSprite->isSpriteVisible = false;
 		}
-		else if (strcmpi(m_pObjSprite->fileName,"data/objects/bomb.bmp") == 0 && m_pObjSprite->isSpriteVisible)
+		else if (strcmpi(m_pObjSprite->fileName,"data/objects/bomb_bonus.bmp") == 0 && m_pObjSprite->isSpriteVisible)
 		{
-			m_pObjSprite->isSpriteVisible = false;
 			return true;
 		}
 	}

@@ -64,6 +64,39 @@ Sprite::~Sprite()
 	DeleteDC(mhSpriteDC);
 }
 
+void Sprite::LoadSprite(const char *szImageFile, const char *szMaskFile)
+{
+	mhImage = (HBITMAP)LoadImage(g_hInst, szImageFile, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
+	mhMask = (HBITMAP)LoadImage(g_hInst, szMaskFile, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
+
+	// Get the BITMAP structure for each of the bitmaps.
+	GetObject(mhImage, sizeof(BITMAP), &mImageBM);
+	GetObject(mhMask, sizeof(BITMAP), &mMaskBM);
+
+	// Image and Mask should be the same dimensions.
+	assert(mImageBM.bmWidth == mMaskBM.bmWidth);
+	assert(mImageBM.bmHeight == mMaskBM.bmHeight);
+
+	mcTransparentColor = 0;
+	mhSpriteDC = 0;
+
+	strcpy(fileName,szImageFile);
+}
+
+void Sprite::LoadSprite(const char *szImageFile, COLORREF crTransparentColor)
+{
+	mhImage = (HBITMAP)LoadImage(g_hInst, szImageFile, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
+
+	mhMask = 0;
+	mhSpriteDC = 0;
+	mcTransparentColor = crTransparentColor;
+
+	// Get the BITMAP structure for the bitmap.
+	GetObject(mhImage, sizeof(BITMAP), &mImageBM);
+
+	strcpy(fileName,szImageFile);
+}
+
 void Sprite::update(float dt)
 {
 	// Update the sprites position.
@@ -182,20 +215,6 @@ void Sprite::drawTransparent()
 	SetTextColor(hBackBuffer, crOldText);
 }
 
-void Sprite::LoadSprite(const char *szImageFile, COLORREF crTransparentColor)
-{
-	mhImage = (HBITMAP)LoadImage(g_hInst, szImageFile, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
-
-	mhMask = 0;
-	mhSpriteDC = 0;
-	mcTransparentColor = crTransparentColor;
-
-	// Get the BITMAP structure for the bitmap.
-	GetObject(mhImage, sizeof(BITMAP), &mImageBM);
-
-	strcpy(fileName,szImageFile);
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 AnimatedSprite::AnimatedSprite(const char *szImageFile, const char *szMaskFile, const RECT& rcFirstFrame, int iFrameCount) 
@@ -220,13 +239,13 @@ AnimatedSprite::AnimatedSprite(const char *szImageFile, COLORREF crTransparentCo
 	miFrameCount = iFrameCount;
 }
 
-void AnimatedSprite::SetFrame(int iIndex)
+void AnimatedSprite::SetFrame(int iIndex, int x, int y)
 {
 	// index must be in range
 	assert(iIndex >= 0 && iIndex < miFrameCount && "AnimatedSprite frame Index must be in range!");
 
-	mptFrameCrop.x = mptFrameStartCrop.x + iIndex%5*miFrameWidth;
-	mptFrameCrop.y = mptFrameStartCrop.y + iIndex/5*miFrameHeight;
+	mptFrameCrop.x = mptFrameStartCrop.x + iIndex%x*miFrameWidth;
+	mptFrameCrop.y = mptFrameStartCrop.y + iIndex/y*miFrameHeight;
 }
 
 void AnimatedSprite::draw()

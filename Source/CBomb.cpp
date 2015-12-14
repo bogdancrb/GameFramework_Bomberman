@@ -15,26 +15,35 @@
 //-----------------------------------------------------------------------------
 CBomb::CBomb(const BackBuffer *pBackBuffer, int ID)
 {
+	// Animation frame crop rectangle
+	RECT r;
+	r.left = 0;
+	r.top = 0;
+	r.right = 30;
+	r.bottom = 30;
+
 	if (ID == 0)
 	{
-		m_pBombSprite = new Sprite("data/objects/bomb.bmp", RGB(0xff,0x00,0xff));
+		m_pBombSprite = new AnimatedSprite("data/objects/bomb.bmp", "data/objects/bombmask.bmp", r, 5);
 	}
 	if (ID == 1)
 	{
-		m_pBombSprite = new Sprite("data/objects/specialbomb.bmp", RGB(0xff,0x00,0xff));
+		m_pBombSprite = new AnimatedSprite("data/objects/sbomb.bmp", "data/objects/bombmask.bmp", r, 5);
 	}
 
 	m_pBombSprite->setBackBuffer(pBackBuffer);
 
-	// Animation frame crop rectangle
-	RECT r;
+	m_iBombSpriteFrame	= 0;
+
 	r.left = 0;
 	r.top = 0;
 	r.right = 64;
 	r.bottom = 64;
 
+	m_BombExplosionRange = EXPLOSION_RANGE;
+
 	// Incarcam cate un sprite pentru fiecare bucata de explozie
-	for (int index = 0; index < EXPLOSION_RANGE; index++)
+	for (int index = 0; index < m_BombExplosionRange; index++)
 	{
 		m_pBombExplosionSprite[index] = new AnimatedSprite("data/explosions/explosion.bmp", "data/explosions/explosionmask.bmp", r, 25);
 		//m_pBombExplosionSprite[index]	= new AnimatedSprite("data/explosionandmask.bmp", RGB(0xff,0x00,0xff), r, 16);
@@ -45,6 +54,8 @@ CBomb::CBomb(const BackBuffer *pBackBuffer, int ID)
 
 	// Marcam bomba ca fiind inactiva
 	m_BombIsActive = false;
+
+	m_BombTimer = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -54,7 +65,7 @@ CBomb::CBomb(const BackBuffer *pBackBuffer, int ID)
 CBomb::~CBomb()
 {
 	delete m_pBombSprite;
-	for (int index = 0; index < EXPLOSION_RANGE; index++)
+	for (int index = 0; index < m_BombExplosionRange; index++)
 		delete m_pBombExplosionSprite[index];
 }
 
@@ -69,7 +80,7 @@ void CBomb::DrawBomb()
 	if(!m_bBombExplosion)
 		m_pBombSprite->draw();
 	else
-		for (int index = 0; index < EXPLOSION_RANGE; index++)
+		for (int index = 0; index < m_BombExplosionRange; index++)
 			m_pBombExplosionSprite[index]->draw();
 }
 
@@ -92,7 +103,7 @@ void CBomb::BombExplode(CMap* Map, int ID)
 {
 	//-------------------------------------------------------------------
 	// Forma explozie cu vectori
-	// Daca EXPLOSION_RANGE = 13 avem:
+	// Daca m_BombExplosionRange = 13 avem:
 	//								  Y:
 	//								  12
 	//								  10
@@ -109,7 +120,7 @@ void CBomb::BombExplode(CMap* Map, int ID)
 	
 	m_pBombExplosionSprite[0]->mPosition = m_pBombSprite->mPosition; // Prima explozie are loc pe centru (pe pozitia bombei)
 
-	for (int index = 1; index <= (EXPLOSION_RANGE-1)/2; index+=2)
+	for (int index = 1; index <= (m_BombExplosionRange-1)/2; index+=2)
 	{
 		k += BLOCKSIZE; // Setam viitoarele coordonate in functie de BLOCKSIZE (60, 120, 180 etc.)
 
@@ -146,7 +157,7 @@ void CBomb::BombExplode(CMap* Map, int ID)
 		{
 			if (!colisionImpareY)
 				// Setam o parte din explozii sa aiba loc pe axa -Y
-				m_pBombExplosionSprite[index+(EXPLOSION_RANGE)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,-k);
+				m_pBombExplosionSprite[index+(m_BombExplosionRange)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,-k);
 
 			// Daca exista coliziune intre bomba si harta
 			if (BombColision(m_pBombSprite->mPosition + Vec2(0,-k), Map) == true)
@@ -160,7 +171,7 @@ void CBomb::BombExplode(CMap* Map, int ID)
 		{
 			if (!colisionPareY)
 				// Setam o parte din explozii sa aiba loc pe axa +Y
-				m_pBombExplosionSprite[index+(EXPLOSION_RANGE+1)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,k);
+				m_pBombExplosionSprite[index+(m_BombExplosionRange+1)/2]->mPosition = m_pBombSprite->mPosition + Vec2(0,k);
 
 			// Daca exista coliziune intre bomba si harta
 			if (BombColision(m_pBombSprite->mPosition + Vec2(0,k), Map) == true)
@@ -209,9 +220,9 @@ bool CBomb::BombAdvanceExplosion()
 {
 	if(m_bBombExplosion)
 	{
-		for (int index = 0; index < EXPLOSION_RANGE; index++)
+		for (int index = 0; index < m_BombExplosionRange; index++)
 		{
-			m_pBombExplosionSprite[index]->SetFrame(m_iBombExplosionFrame++);
+			m_pBombExplosionSprite[index]->SetFrame(m_iBombExplosionFrame++,5,5);
 			if(m_iBombExplosionFrame==m_pBombExplosionSprite[index]->GetFrameCount())
 			{
 				m_bBombExplosion = false;
@@ -219,6 +230,22 @@ bool CBomb::BombAdvanceExplosion()
 				m_pBombSprite->mVelocity = Vec2(0,0);
 				return false;
 			}
+		}
+	}
+
+	return true;
+}
+
+bool CBomb::BombAdvancePlacement()
+{
+	if (m_BombIsActive)
+	{
+		m_pBombSprite->SetFrame(m_iBombSpriteFrame++,5,5);
+
+		if(m_iBombSpriteFrame==m_pBombSprite->GetFrameCount())
+		{
+			m_iBombSpriteFrame = 0;
+			return false;
 		}
 	}
 

@@ -111,7 +111,7 @@ vector<int> CMap::OpenMap(const char* FileName)
 	}
 	else
 	{
-		MessageBox( 0, _T("Failed to initialize properly. Reinstalling the application may solve this problem.\nIf the problem persists, please contact technical support."), _T("Fatal Error"), MB_OK | MB_ICONSTOP);
+		MessageBox( 0, _T("Error code: 2\n\nFailed to initialize properly. Reinstalling the application may solve this problem.\nIf the problem persists, please contact technical support."), _T("Fatal Error"), MB_OK | MB_ICONSTOP);
 		exit(0);
 	}
 }
@@ -211,8 +211,11 @@ void CMap::GeneratePortal()
 		if (m_Portal->mPosition == Vec2(0,0))
 			m_Portal->mPosition = m_destructable_box[randDestructIndex]->mPosition;
 
-		if (m_Portal->isSpriteVisible)
-			m_Portal->draw();
+		m_Portal->draw();
+	}
+	else
+	{
+		m_Portal->mPosition = Vec2(300,300);
 	}
 }
 

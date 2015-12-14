@@ -21,7 +21,7 @@ CNonPlayer::CNonPlayer(const BackBuffer *pBackBuffer, int ID)
 	//m_pNPCSprite = new Sprite("data/planeimg.bmp", "data/planemask.bmp");
 	if (ID == 0)
 	{
-		m_pNPCSprite = new Sprite("data/characters/enemy.bmp", RGB(0xff,0x00,0xff));
+		m_pNPCSprite = new Sprite("data/characters/enemyFront.bmp", RGB(0xff,0x00,0xff));
 	}
 	if (ID == 1)
 	{
@@ -71,7 +71,7 @@ void CNonPlayer::DrawNPC()
 		m_pNPCExplosionSprite->draw();
 }
 
-void CNonPlayer::NPCMove(CPlayer* Player, CMap* Map, CBomb* Bomb)
+void CNonPlayer::NPCMove(CPlayer* Player, CMap* Map, vector<CBomb*> Bomb, int ID)
 {
 	// Crestem timer-ul
 	MoveTimer++;
@@ -118,7 +118,7 @@ void CNonPlayer::NPCMove(CPlayer* Player, CMap* Map, CBomb* Bomb)
 	}
 
 	// Daca distanta dintre NPC si jucator este mai mica sau egala decat 0, inseamna ca jucatorul a murit
-	if (abs(m_pNPCSprite->mPosition.x - Player->Position().x) <= 0 && abs(m_pNPCSprite->mPosition.y - Player->Position().y) <= 0)
+	if (abs(m_pNPCSprite->mPosition.x - Player->Position(ID).x) <= 0 && abs(m_pNPCSprite->mPosition.y - Player->Position(ID).y) <= 0)
 	{
 		Player->get_m_pLives().back()->removed = true;
 		Player->Killed();
@@ -126,7 +126,7 @@ void CNonPlayer::NPCMove(CPlayer* Player, CMap* Map, CBomb* Bomb)
 	}
 }
 
-void CNonPlayer::SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb)
+void CNonPlayer::SelectVelocity(CPlayer* Player, CMap* Map, vector<CBomb*> Bomb)
 {
 	// Pozitia veche a NPC-ului este pozitia NPC-ului inainte de a fi modificata de velocitate
 	m_pNPCSprite->mOldPos = m_pNPCSprite->mPosition;
@@ -150,22 +150,34 @@ void CNonPlayer::SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb)
 			if ( abs( (m_pNPCSprite->mPosition.x+BLOCKSIZE) - Player->Position().x) < DistanceToPlayer.x 
 				&& !NPCDetectColision(Map, Bomb, m_pNPCSprite->mPosition.x+BLOCKSIZE, m_pNPCSprite->mPosition.y)
 				)
+			{
+				m_pNPCSprite->LoadSprite("data/characters/enemyRight.bmp", RGB(0xff,0x00,0xff));
 				m_pNPCSprite->mVelocity.x = 300;
+			}
 
 			else if ( abs( (m_pNPCSprite->mPosition.x-BLOCKSIZE) - Player->Position().x) < DistanceToPlayer.x
 				&& !NPCDetectColision(Map, Bomb, m_pNPCSprite->mPosition.x-BLOCKSIZE, m_pNPCSprite->mPosition.y)
 				)
+			{
+				m_pNPCSprite->LoadSprite("data/characters/enemyLeft.bmp", RGB(0xff,0x00,0xff));
 				m_pNPCSprite->mVelocity.x = -300;
+			}
 
 			else if ( abs( (m_pNPCSprite->mPosition.y+BLOCKSIZE) - Player->Position().y) < DistanceToPlayer.y
 				&& !NPCDetectColision(Map, Bomb, m_pNPCSprite->mPosition.x, m_pNPCSprite->mPosition.y+BLOCKSIZE)
 				)
+			{
+				m_pNPCSprite->LoadSprite("data/characters/enemyFront.bmp", RGB(0xff,0x00,0xff));
 				m_pNPCSprite->mVelocity.y = 300;
+			}
 
 			else if ( abs( (m_pNPCSprite->mPosition.y-BLOCKSIZE) - Player->Position().y) < DistanceToPlayer.y
 				&& !NPCDetectColision(Map, Bomb, m_pNPCSprite->mPosition.x, m_pNPCSprite->mPosition.y-BLOCKSIZE)
 				)
+			{
+				m_pNPCSprite->LoadSprite("data/characters/enemyBack.bmp", RGB(0xff,0x00,0xff));
 				m_pNPCSprite->mVelocity.y = -300;
+			}
 		}
 	}
 	else
@@ -174,20 +186,32 @@ void CNonPlayer::SelectVelocity(CPlayer* Player, CMap* Map, CBomb* Bomb)
 		int select = rand() % 4 + 1;
 
 		if (select == 1) // Velocitate dreapta
+		{
+			m_pNPCSprite->LoadSprite("data/characters/enemyRight.bmp", RGB(0xff,0x00,0xff));
 			m_pNPCSprite->mVelocity.x = 300;
+		}
 
 		else if (select == 2) // Velocitate stanga
+		{
+			m_pNPCSprite->LoadSprite("data/characters/enemyLeft.bmp", RGB(0xff,0x00,0xff));
 			m_pNPCSprite->mVelocity.x = -300;
+		}
 
 		else if (select == 3) // Velocitate jos
+		{
+			m_pNPCSprite->LoadSprite("data/characters/enemyFront.bmp", RGB(0xff,0x00,0xff));
 			m_pNPCSprite->mVelocity.y = 300;
+		}
 
 		else if (select == 4) // Velocitate sus
+		{
+			m_pNPCSprite->LoadSprite("data/characters/enemyBack.bmp", RGB(0xff,0x00,0xff));
 			m_pNPCSprite->mVelocity.y = -300;
+		}
 	}
 }
 
-void CNonPlayer::NPCColision(CMap* Map, CBomb* Bomb)
+void CNonPlayer::NPCColision(CMap* Map, vector<CBomb*> Bomb)
 {
 	// Daca exista coliziune intre NPC, block sau bomba
 	if (NPCDetectColision(Map, Bomb, m_pNPCSprite->mPosition.x, m_pNPCSprite->mPosition.y))
@@ -199,7 +223,7 @@ void CNonPlayer::NPCColision(CMap* Map, CBomb* Bomb)
 	}
 }
 
-int CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double PosY)
+int CNonPlayer::NPCDetectColision(CMap* Map, vector<CBomb*> Bomb, double PosX, double PosY)
 {
 	for (int id = 0; id < 3; id++)
 	{
@@ -231,11 +255,12 @@ int CNonPlayer::NPCDetectColision(CMap* Map, CBomb* Bomb, double PosX, double Po
 			}
 		}
 	}
-
-	if (Bomb != NULL)
-		// Daca (pozitia NPC-ului - pozitia bombei) au o diferenta de (BLOCKSIZE-5), inseamna ca NPC-ul o sa intalneasca o bomba
-		if ((abs(PosX - Bomb->BombPosition().x) < BLOCKSIZE-5 && abs(Bomb->BombPosition().y - PosY) < BLOCKSIZE-5))
-			return 2; // returnam 2 ca avem coliziune cu bomba
+	
+	for (int index = 0; index < Bomb.size(); index++)
+		if (Bomb[index] != NULL)
+			// Daca (pozitia NPC-ului - pozitia bombei) au o diferenta de (BLOCKSIZE-5), inseamna ca NPC-ul o sa intalneasca o bomba
+			if ((abs(PosX - Bomb[index]->BombPosition().x) < BLOCKSIZE-5 && abs(Bomb[index]->BombPosition().y - PosY) < BLOCKSIZE-5))
+				return 2; // returnam 2 ca avem coliziune cu bomba
 
 	// Daca nu s-au facut coliziuni, returnam 0
 	return 0;
@@ -271,7 +296,7 @@ void CNonPlayer::NPCExplode(int ID)
 	if (ID == 1)
 	{
 		m_pNPCExplosionSprite->mPosition = m_pNPCSprite->mPosition;
-		m_pNPCExplosionSprite->SetFrame(0);
+		m_pNPCExplosionSprite->SetFrame(0,5,5);
 		m_bNPCExplosion = true;
 		//PlaySound("data/sounds/explosion.wav", NULL, SND_FILENAME | SND_ASYNC);
 	}
@@ -284,7 +309,7 @@ bool CNonPlayer::NPCAdvanceExplosion()
 {
 	if(m_bNPCExplosion)
 	{
-		m_pNPCExplosionSprite->SetFrame(m_iNPCExplosionFrame++);
+		m_pNPCExplosionSprite->SetFrame(m_iNPCExplosionFrame++,5,5);
 		if(m_iNPCExplosionFrame==m_pNPCExplosionSprite->GetFrameCount())
 		{
 			m_bNPCExplosion = false;

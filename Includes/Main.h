@@ -25,6 +25,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <queue>
 
 using namespace std;
 
@@ -45,8 +46,10 @@ using namespace std;
 #define BLOCKSIZE 60 // Marimea unui block in pixeli (60x60)
 
 #define MAX_CRATE 25 // Numarul maxim de cutii/bombe care sa cada din cer
-#define MAX_NPCS 3 // Numarul maxim de NPC-uri
-#define MAX_LEVELS 1 // Numarul maxim de normal game levels
+#define MAX_NPCS 10 // Numarul maxim de NPC-uri
+#define MAX_LEVELS 3 // Numarul maxim de normal game levels
+
+#define	INITIAL_BOMBS 3 // Numarul initial de bombe cu care incepe jucatorul
 
 // Nivelele bonus si boss (cele bonus sunt negative pentru a putea lucra fara probleme)
 #define BONUS_LEVEL1 -1
@@ -56,6 +59,7 @@ using namespace std;
 
 #define EXPLOSION_SPEED 3*50 // Viteza de afisare a exploziei (1*50 => 1 frame/sec, 2*50 => 2 frame/sec, etc.)
 #define EXPLOSION_RANGE 2+2+1+2+2 // Pe cate bock-uri este extinsa explozia (2 sus + 2 jos + 1 centru + 2 stanga + 2 dreapta = 9)
+#define SPEC_EXPLOSION_RANGE 4+4+1+4+4
 #define BOMB_TIMER 3*50 // Dupa cat timp sa explodeze o bomba (10*50 => 10 sec, 20*50 => 20 sec, etc.)
 
 #define NPC_SPEED 0.7*50 // Viteza de schimbare a directiei NPC (1*50 => 1 block/sec, 2*50 => 2 block/sec, etc.)

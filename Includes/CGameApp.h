@@ -103,22 +103,28 @@ private:
 
 	BackBuffer*				m_pBBuffer;
 	CPlayer*				m_pPlayer;
-	CNonPlayer*				m_pNPC[MAX_NPCS];
+	vector<CNonPlayer*>		m_pNPC;
 	CObject*				m_pCratesAndBombs[MAX_CRATE];
 
 	CMap*					m_Map;	// Harta cu tot cu obiecte si coliziuni ziduri
 	CMap*					m_BonusMap;	// Harta bonus cu tot cu obiecte si coliziuni ziduri
-	CMap*					m_BossMap;	// Harta cu tot cu obiecte si coliziuni ziduri
+	CMap*					m_BossMap;	// Harta cu tot cu obiecte si coliziunia ziduri
 
-	CBomb*					m_pBomb;
+	vector<CBomb*>			m_pBomb;
 	
 	bool					F1Pressed;		// Pentru a putea desena pe ecran informatii precum FPS, etc.
 
 	MainMenu*				m_MMenu;
 	InGameMenu*				m_SMenu;
-
+	HighScoreMenu*			m_HighMenu;
+	
 	int						m_LoadGameLevel; // Folosim pentru a trece dintr-un nivel in altul
 	int						m_CurrentGameLevel; // Folosim pentru a memora nivelul principal
+	long int				SavedPlayerPoints;
+
+	int						AnimationID;
+
+	priority_queue<long int> BestScores;
 };
 
 #endif // _CGAMEAPP_H_

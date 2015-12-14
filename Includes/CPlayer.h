@@ -50,29 +50,30 @@ public:
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-			 CPlayer(const BackBuffer *pBackBuffer, int ID = 0);
+			 CPlayer(const BackBuffer *pBackBuffer);
 	virtual ~CPlayer();
 
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class.
 	//-------------------------------------------------------------------------
-	void					Update(float dt);
-	void					Draw();
+	void					Update(float dt, int ID = 0);
+	void					Draw(int ID = 0);
 	void					Move(ULONG ulDirection, int ID = 0);
 
 	bool&					CanMove();
 
-	Vec2&					Position();
-	Vec2&					PlayerDecalPos();	// Pentru a accaesa pozitia decalata jucatorului
-	Vec2&					PlayerOldPos();		// Pentru a accaesa pozitia veche a jucatorului
-	Vec2&					Velocity();
+	Vec2&					Position(int ID = 0);
+	Vec2&					PlayerDecalPos(int ID = 0);	// Pentru a accaesa pozitia decalata jucatorului
+	Vec2&					PlayerOldPos(int ID = 0);		// Pentru a accaesa pozitia veche a jucatorului
+	Vec2&					Velocity(int ID = 0);
 
-	void					PlayerColision(CMap* Map);	// Detectare coliziune intre jucator si block de pe harta
+	void					PlayerColision(CMap* Map, int ID = 0);	// Detectare coliziune intre jucator si block de pe harta
 
-	void					PlaceBomb(CBomb** Bomb, BackBuffer* BBuffer); // Punem o bomba la pozitia jucatorului
+	void					PlaceBomb(vector<CBomb*>* Bomb, BackBuffer* BBuffer, int ID = 0); // Punem o bomba la pozitia jucatorului
 
 	void					Explode(int ID = 0);
-	bool					AdvanceExplosion();
+	bool					AdvanceExplosion(int ID = 0);
+	bool					AdvanceMovement(int ID = 0);
 
 	void					Killed();
 
@@ -81,14 +82,15 @@ public:
 	vector<Lives*>			get_m_pLives(){ return m_pLives; }
 	bool&					get_if_is_dead(){ return is_dead; }
 
-	int						Width() { return m_pSprite->width(); }
-	int						Height() { return m_pSprite->height(); }
+	int						Width(int ID = 0) { return m_pSprite[ID]->width(); }
+	int						Height(int ID = 0) { return m_pSprite[ID]->height(); }
 
 private:
 	//-------------------------------------------------------------------------
 	// Private Variables for This Class.
 	//-------------------------------------------------------------------------
-	Sprite*					m_pSprite;
+	AnimatedSprite*			m_pSprite[4];
+	int						m_iSpriteFrame;
 	
 	bool					m_bExplosion;
 	AnimatedSprite*			m_pExplosionSprite;
@@ -102,6 +104,8 @@ private:
 	int						no_lives;
 	//-----------------------------------
 	bool				    is_dead;
+
+	int						m_pMaxBombs;
 
 public:
 	//-------------------------------------------------------------------------

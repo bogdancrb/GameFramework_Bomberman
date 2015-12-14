@@ -23,6 +23,7 @@ public:
 
 	void			setBackBuffer(const BackBuffer *pBackBuffer);
 	virtual void	draw();
+	void			LoadSprite(const char *szImageFile, const char *szMaskFile);
 	void			LoadSprite(const char *szImageFile, COLORREF crTransparentColor);
 
 public:
@@ -69,7 +70,7 @@ public:
 	virtual	~AnimatedSprite() { }
 
 public:
-	void	SetFrame(int iIndex);
+	void	SetFrame(int iIndex,int x,int y);
 	int		GetFrameCount() { return miFrameCount; }
 
 	virtual void	draw();

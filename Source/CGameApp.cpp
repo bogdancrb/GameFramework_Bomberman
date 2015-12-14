@@ -31,12 +31,9 @@ CGameApp::CGameApp()
 	m_pBBuffer		= NULL;
 	m_pPlayer		= NULL;
 	m_Map           = NULL;
-	m_pBomb			= NULL;
 	m_MMenu			= NULL;
 	m_SMenu			= NULL;
-
-	for (int index = 0; index < MAX_NPCS; index++)
-		m_pNPC[index] = NULL;
+	m_HighMenu		= NULL;
 
 	for (int index = 0; index < MAX_CRATE; index++)
 		m_pCratesAndBombs[index] = NULL;
@@ -44,6 +41,8 @@ CGameApp::CGameApp()
 	m_LastFrameRate = 0;
 
 	m_CurrentGameLevel = m_LoadGameLevel = 1;
+
+	LoadGame();
 }
 
 //-----------------------------------------------------------------------------
@@ -68,7 +67,7 @@ bool CGameApp::InitInstance( LPCTSTR lpCmdLine, int iCmdShow )
 	// Build Objects
 	if (!BuildObjects()) 
 	{ 
-		MessageBox( 0, _T("Failed to initialize properly. Reinstalling the application may solve this problem.\nIf the problem persists, please contact technical support."), _T("Fatal Error"), MB_OK | MB_ICONSTOP);
+		MessageBox( 0, _T("Error code: 1\n\nFailed to initialize properly. Reinstalling the application may solve this problem.\nIf the problem persists, please contact technical support."), _T("Fatal Error"), MB_OK | MB_ICONSTOP);
 		ShutDown(); 
 		return false; 
 	}
@@ -285,7 +284,11 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 				break;*/
 			case VK_SPACE: // Daca jucatorul apasa tasta SPACE
 				if ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL)
-					m_pPlayer->PlaceBomb(&m_pBomb,m_pBBuffer); // Plasam bomba pe harta
+				{
+ 					m_pPlayer->PlaceBomb(&m_pBomb,m_pBBuffer, AnimationID); // Plasam bomba pe harta
+					SetTimer(m_hWnd, 2, BOMB_TIMER*5, NULL);
+					//KillTimer(m_hWnd,2);
+				}
 				break;
 			case VK_F1:
 				F1Pressed ? F1Pressed = false : F1Pressed = true;
@@ -302,20 +305,34 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 			switch(wParam)
 			{
 			case 1:
-				/*if(!m_pPlayer->AdvanceExplosion())
-					KillTimer(m_hWnd, 1);*/
-
 				// Verificam daca bomba a fost creata (plasata)
-				if (m_pBomb != NULL)
+				for (int index = 0; index < m_pBomb.size(); index++)
 				{
-					// Daca bomba a explodat, o stergem din memorie si inchidem timer-ul
-					if(!m_pBomb->BombAdvanceExplosion())
+					if (m_pBomb[index] != NULL)
 					{
-						delete m_pBomb;
-						m_pBomb = NULL;
-						KillTimer(m_hWnd, 1);
+						// Daca bomba a explodat, o stergem din memorie si inchidem timer-ul
+						if(!m_pBomb[index]->BombAdvanceExplosion())
+						{
+							delete m_pBomb[index];
+							m_pBomb[index] = NULL;
+							m_pBomb.erase(m_pBomb.begin() + index);
+							KillTimer(m_hWnd, 1);
+						}
 					}
 				}
+				break;
+
+			case 2:
+				for (int index = 0; index < m_pBomb.size(); index++)
+				{
+					if(!m_pBomb[index]->BombAdvancePlacement())
+						KillTimer(m_hWnd, 2);
+				}
+				break;
+
+			case 3:
+				if(!m_pPlayer->AdvanceMovement(AnimationID))
+					KillTimer(m_hWnd, 3);
 			}
 			break;
 
@@ -336,20 +353,29 @@ LRESULT CGameApp::DisplayWndProc( HWND hWnd, UINT Message, WPARAM wParam, LPARAM
 //-----------------------------------------------------------------------------
 bool CGameApp::BuildObjects()
 {
-	bool ok;
+	bool ok = true;
 
 	m_pBBuffer = new BackBuffer(m_hWnd, m_nViewWidth, m_nViewHeight); 
 
-	m_pPlayer = new CPlayer(m_pBBuffer);
-
-	for (int index = 0; index < MAX_NPCS; index++)
-		m_pNPC[index] = new CNonPlayer(m_pBBuffer);
-
-	for (int index = 0; index < MAX_CRATE; index++)
-		m_pCratesAndBombs[index] = new CObject(m_pBBuffer);
-
 	if (m_MMenu == NULL)
 		m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
+
+	if (!m_MMenu->m_Active)
+	{
+		m_pPlayer = new CPlayer(m_pBBuffer);
+
+		for (int index = 0; index < MAX_NPCS; index++)
+		{
+			m_pNPC.resize(index+1);
+			m_pNPC[index] = new CNonPlayer(m_pBBuffer);
+		}
+
+		for (int index = 0; index < MAX_CRATE; index++)
+			m_pCratesAndBombs[index] = new CObject(m_pBBuffer);
+
+		if (m_SMenu == NULL)
+			m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
+	}
 
 	ok = LoadLevel(); // Incarcam nivelul (harta + background)
 
@@ -367,32 +393,35 @@ bool CGameApp::LoadLevel()
 
 	itoa(m_LoadGameLevel,mapNr,10);
 
-	if (m_LoadGameLevel >= 1 && m_LoadGameLevel != BOSS_LEVEL)
+	if (!m_MMenu->m_Active)
 	{
-		strcpy(mapName,"data/"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
+		if (m_LoadGameLevel >= 1 && m_LoadGameLevel != BOSS_LEVEL)
+		{
+			strcpy(mapName,"data/"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
 		
-		// Incarcam harta doar daca nu exista alta incarcata momentan
-		if (m_Map == NULL)
-			m_Map = new CMap(mapName, m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
+			// Incarcam harta doar daca nu exista alta incarcata momentan
+			if (m_Map == NULL)
+				m_Map = new CMap(mapName, m_pBBuffer); // Incarcare harta din fisier (datele sunt intr-o matrice)
 
-		m_CurrentGameLevel = m_LoadGameLevel;
-	}
-	else if (m_LoadGameLevel <= BONUS_LEVEL1)
-	{
-		strcpy(mapName,"data/bonus"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
+			m_CurrentGameLevel = m_LoadGameLevel;
+		}
+		else if (m_LoadGameLevel <= BONUS_LEVEL1)
+		{
+			strcpy(mapName,"data/bonus"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
 
-		m_BonusMap = new CMap(mapName, m_pBBuffer);
+			m_BonusMap = new CMap(mapName, m_pBBuffer);
+		}
+		else if (m_LoadGameLevel == BOSS_LEVEL)
+		{
+			itoa(BOSS_LEVEL,mapNr,10);
+			strcpy(mapName,"data/"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
 
-	}
-	else if (m_LoadGameLevel == BOSS_LEVEL)
-	{
-		strcpy(mapName,"data/"); strcat(mapName,mapNr); strcat(mapName,".gamemap");
-
-		m_BossMap = new CMap(mapName, m_pBBuffer);
-	}
-	else if (m_LoadGameLevel == TEST_LEVEL)
-	{
-		m_Map = new CMap("data/test.gamemap", m_pBBuffer);
+			m_BossMap = new CMap(mapName, m_pBBuffer);
+		}
+		else if (m_LoadGameLevel == TEST_LEVEL)
+		{
+			m_Map = new CMap("data/test.gamemap", m_pBBuffer);
+		}
 	}
 
 	strcpy(bgName,"data/background/background"); strcat(bgName,mapNr); strcat(bgName,".bmp");
@@ -411,28 +440,36 @@ void CGameApp::SetupGameState()
 {
 	if (!m_MMenu->m_Active)
 	{
-		if ( (m_LoadGameLevel == 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) // Level 1 + level test
-		{
-			m_pPlayer->Position() = Vec2(390, 690);
+		if (SavedPlayerPoints)
+			m_pPlayer->m_pPoints = SavedPlayerPoints;
 
-			// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
-			m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+		if (m_LoadGameLevel == 1 || m_LoadGameLevel == 2 || m_LoadGameLevel == TEST_LEVEL) // Level 1 + level test
+		{
+			for (int index = 0; index < 4; index++)
+				m_pPlayer->Position(index) = Vec2(390, 690);
+		}
+		else if (m_LoadGameLevel == 3)
+		{
+			for (int index = 0; index < 4; index++)
+				m_pPlayer->Position(index) = Vec2(690, 390);
 		}
 		else if (m_LoadGameLevel <= BONUS_LEVEL1) // Levele bonus
 		{
-			m_pPlayer->Position() = Vec2(690, 690);
-
-			m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+			for (int index = 0; index < 4; index++)
+				m_pPlayer->Position(index) = Vec2(690, 690);
 
 			for (int index = 0; index < MAX_CRATE; index++)
 				m_pCratesAndBombs[index]->StartMoving();
 		}
 		else if (m_LoadGameLevel == BOSS_LEVEL) // Level boss
 		{
-			m_pPlayer->Position() = Vec2(690, 690);
-
-			m_pPlayer->PlayerDecalPos() = m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+			for (int index = 0; index < 4; index++)
+				m_pPlayer->Position(index) = Vec2(690, 690);
 		}
+
+		// Pozitia decalata si cea veche sunt egale cu pozitia de inceput a jucatorului
+		for (int index = 0; index < 4; index++)
+			m_pPlayer->PlayerDecalPos(index) = m_pPlayer->PlayerOldPos(index) = m_pPlayer->Position(index);
 	}
 }
 
@@ -442,19 +479,23 @@ void CGameApp::SetupGameState()
 //		rebuild them, if required, during our applications life-time.
 //-----------------------------------------------------------------------------
 void CGameApp::ReleaseObjects( int dontDeleteBuff )
-{
+{	
 	if(m_pPlayer != NULL)
 	{
+		if (m_pPlayer->m_pPoints != NULL)
+			SavedPlayerPoints = m_pPlayer->m_pPoints;
+
 		delete m_pPlayer;
 		m_pPlayer = NULL;
 	}
 
-	for (int index = 0; index < MAX_NPCS; index++)
+	for (int index = 0; index < m_pNPC.size(); index++)
 	{
 		if(m_pNPC[index] != NULL)
 		{
 			delete m_pNPC[index];
 			m_pNPC[index] = NULL;
+			m_pNPC.erase(m_pNPC.begin() + index);
 		}
 	}
 
@@ -485,12 +526,19 @@ void CGameApp::ReleaseObjects( int dontDeleteBuff )
 		m_BossMap = NULL;
 	}
 
+	if (m_SMenu != NULL)
+	{
+		delete m_SMenu;
+		m_SMenu = NULL;
+	}
+
 	if(m_pBBuffer != NULL && !dontDeleteBuff)
 	{
 		delete m_pBBuffer;
 		m_pBBuffer = NULL;
 	}
 
+	// Pentru a da restart la level curent, nu la tot jocul
 	m_LoadGameLevel = m_CurrentGameLevel;
 }
 
@@ -512,7 +560,7 @@ void CGameApp::FrameAdvance()
 	// Verificam daca s-au apasat butoane pe ecran
 	ProcessMenuButtons();
 
-	if (!m_MMenu->m_Active)
+	if (!m_MMenu->m_Active && !m_SMenu->m_Active)
 	{
 		// Animate the game objects
 		AnimateObjects();
@@ -527,17 +575,17 @@ void CGameApp::FrameAdvance()
 		if ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) // Levele principale + level test
 		{
 			// Detecteaza coliziune [jucator - ziduri]
-			m_pPlayer->PlayerColision(m_Map);
+			m_pPlayer->PlayerColision(m_Map, AnimationID);
 
-			for (int index = 0; index < MAX_NPCS; index++)
+			for (int npcIndex = 0; npcIndex < m_pNPC.size(); npcIndex++)
 			{
-				if (m_pNPC[index])
+				if (m_pNPC[npcIndex] != NULL)
 				{
 					// Punem NPC-ul in miscare, cu detecare daca jucatorul este prin apropiere si daca se face coliziune [NPC - jucator]
-					m_pNPC[index]->NPCMove(m_pPlayer, m_Map, m_pBomb);
+					m_pNPC[npcIndex]->NPCMove(m_pPlayer, m_Map, m_pBomb, AnimationID);
 
 					// Detecteaza coliziune [NPC - ziduri - bomba]
-					m_pNPC[index]->NPCColision(m_Map, m_pBomb);
+					m_pNPC[npcIndex]->NPCColision(m_Map, m_pBomb);
 				}
 			}
 
@@ -546,7 +594,7 @@ void CGameApp::FrameAdvance()
 		}
 		else if (m_LoadGameLevel <= BONUS_LEVEL1) // Levele bonus
 		{
-			m_pPlayer->PlayerColision(m_BonusMap);
+			m_pPlayer->PlayerColision(m_BonusMap, AnimationID);
 
 			for (int index = 0; index < MAX_CRATE; index++)
 			{
@@ -556,13 +604,16 @@ void CGameApp::FrameAdvance()
 					// Incarcam nivelul princpal la care ne aflam
 					m_LoadGameLevel = m_CurrentGameLevel;
 					LoadLevel();
+					SetupGameState();
+					SavedPlayerPoints = m_pPlayer->m_pPoints;
+					break;
 				}
 			}
 		}
-		else if (m_LoadGameLevel != BOSS_LEVEL) // Level boss
+		else if (m_LoadGameLevel == BOSS_LEVEL) // Level boss
 		{
-
-		}
+			m_pPlayer->PlayerColision(m_BossMap, AnimationID);
+		}	
 
 		// Verificam diferite pozitii legate de jucator
 		CheckPositions();
@@ -587,35 +638,52 @@ void CGameApp::ProcessInput( )
 	if (!m_MMenu->m_Active)
 	{
 		// Check the relevant keys
-		if (m_pPlayer->CanMove()) // Verificam daca jucatorul se poate misca
+		if (m_pPlayer->CanMove() && !m_SMenu->m_Active) // Verificam daca jucatorul se poate misca
 		{
+			RECT r;
+			r.left = 0;
+			r.top = 0;
+			r.right = 60;
+			r.bottom = 60;
+
 			if ( (pKeyBuffer[ VK_UP ] & 0xF0) && (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL)
 			{
+				m_pPlayer->PlayerOldPos(1) = m_pPlayer->Position(AnimationID);
+				AnimationID = 1;
+				SetTimer(m_hWnd, 3, 120, NULL);
 				Direction |= CPlayer::DIR_FORWARD;
-				m_pPlayer->PlayerOldPos() = m_pPlayer->Position(); // Memoram vechea pozitie a jucatorului
+				m_pPlayer->PlayerOldPos(AnimationID) = m_pPlayer->Position(AnimationID); // Memoram vechea pozitie a jucatorului
 				m_pPlayer->CanMove() = false; // Jucatorul nu se mai poate misca in alte directii
 			}
 			else if ( (pKeyBuffer[ VK_DOWN ] & 0xF0) && (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL)
 			{
+				m_pPlayer->PlayerOldPos(0) = m_pPlayer->Position(AnimationID);
+				AnimationID = 0;
+				SetTimer(m_hWnd, 3, 120, NULL);
 				Direction |= CPlayer::DIR_BACKWARD;
-				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
 				m_pPlayer->CanMove() = false;
 			}
 			else if ( pKeyBuffer[ VK_LEFT ] & 0xF0 )
 			{
+				m_pPlayer->PlayerOldPos(3) = m_pPlayer->Position(AnimationID);
+				AnimationID = 3;
+				SetTimer(m_hWnd, 3, 120, NULL);
 				Direction |= CPlayer::DIR_LEFT;
-				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+				m_pPlayer->PlayerOldPos(AnimationID) = m_pPlayer->Position(AnimationID);
 				m_pPlayer->CanMove() = false;
 			}
 			else if ( pKeyBuffer[ VK_RIGHT ] & 0xF0 )
 			{
+				m_pPlayer->PlayerOldPos(2) = m_pPlayer->Position(AnimationID);
+				AnimationID = 2;
+				SetTimer(m_hWnd, 3, 120, NULL);
 				Direction |= CPlayer::DIR_RIGHT;
-				m_pPlayer->PlayerOldPos() = m_pPlayer->Position();
+				m_pPlayer->PlayerOldPos(AnimationID) = m_pPlayer->Position(AnimationID);
 				m_pPlayer->CanMove() = false;
 			}
 		}
 
-		m_pPlayer->Move(Direction);
+		m_pPlayer->Move(Direction,AnimationID);
 	}
 }
 
@@ -637,7 +705,7 @@ void CGameApp::ProcessMenuButtons()
 			GetCursorPos( &CursorPos );
 
 			// Buton pentru pause in-game
-			if (CursorPos.x >= 1300 && CursorPos.x <= 1360 && CursorPos.y >= 0 && CursorPos.y <= 60)
+			if (CursorPos.x >= 1330 && CursorPos.x <= 1365 && CursorPos.y >= 0 && CursorPos.y <= 30)
 			{
 				// Setam menu secundar ca fiind activ
 				m_SMenu->m_Active = true;
@@ -647,26 +715,23 @@ void CGameApp::ProcessMenuButtons()
 			if (m_SMenu->m_Active)
 			{
 				// Daca cursorul se afla pe menu secundar
-				if (CursorPos.x >= 594 && CursorPos.x <= 768)
+				if (CursorPos.x >= 605 && CursorPos.x <= 760)
 				{
 					// Menu secundar - Continue
-					if (CursorPos.y >= 268 && CursorPos.y <= 313)
+					if (CursorPos.y >= 290 && CursorPos.y <= 340)
 					{
 						// Ascundem menu secundar
 						m_SMenu->m_Active = false;
 					}
 
 					// Menu secundar - Restart
-					if (CursorPos.y >= 330 && CursorPos.y <= 376)
+					if (CursorPos.y >= 350 && CursorPos.y <= 400)
 					{
 						// Stergem toate obiectele
 						ReleaseObjects();
 
 						//Incarcam obiectele
 						BuildObjects();
-
-						// Creem menu secundar + buton de pauza
-						m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
 
 						// Incarcam setarile initiale
 						SetupGameState();
@@ -676,11 +741,10 @@ void CGameApp::ProcessMenuButtons()
 					}
 
 					// Menu secundar - Main Menu
-					if (CursorPos.y >= 394 && CursorPos.y <= 440)
+					if (CursorPos.y >= 405 && CursorPos.y <= 450)
 					{
 						// Stergem toate obiectele
 						ReleaseObjects(1);
-						delete m_SMenu;
 
 						// Creem menu principal
 						m_MMenu = new MainMenu(m_pBBuffer, 1366, 768);
@@ -690,8 +754,9 @@ void CGameApp::ProcessMenuButtons()
 					}
 
 					// Menu secundar - Exit
-					if (CursorPos.y >=451 && CursorPos.y <= 497)
+					if (CursorPos.y >= 460 && CursorPos.y <= 505)
 					{
+						SaveGame();
 						PostQuitMessage(0);
 					}
 				}
@@ -707,27 +772,44 @@ void CGameApp::ProcessMenuButtons()
 			GetCursorPos(&CursorPos);
 
 			// Menu principal - Play
-			if (CursorPos.x >= 290 && CursorPos.x <= 390 && CursorPos.y >= 200 && CursorPos.y <= 260)
+			if (CursorPos.x >= 460 && CursorPos.x <= 580 && CursorPos.y >= 390 && CursorPos.y <= 460)
 			{
 				// Ascundem menu principal
 				m_MMenu->m_Active = false;
 
-				delete m_Map;
-				m_Map = NULL;
-
 				//Incarcam obiectele
 				BuildObjects();
-
-				// Creem menu secundar + buton de pauza
-				m_SMenu = new InGameMenu(m_pBBuffer, 1366, 768);
 
 				// Incarcam setarile initiale
 				SetupGameState();
 			}
 
-			// Menu principal - Exit
-			if (CursorPos.x >= 997 && CursorPos.x <= 1057 && CursorPos.y >= 398 && CursorPos.y <= 458)
+			// Menu principal - High Scores
+			if (CursorPos.x >= 430 && CursorPos.x <= 620 && CursorPos.y >= 500 && CursorPos.y <= 540)
 			{
+				LoadGame();
+
+				m_HighMenu = new HighScoreMenu(m_pBBuffer, 1366, 768);
+
+				m_HighMenu->m_ActiveScore = true;
+			}
+
+			if (m_HighMenu != NULL && m_HighMenu->m_ActiveScore)
+			{
+				if (CursorPos.x >= 600 && CursorPos.x <= 760 && CursorPos.y >= 490 && CursorPos.y <= 540)
+				{
+					m_HighMenu->m_ActiveScore = false;
+
+					delete m_HighMenu;
+					m_HighMenu = NULL;
+				}
+				
+			}
+
+			// Menu principal - Exit
+			if (CursorPos.x >= 480 && CursorPos.x <= 550 && CursorPos.y >= 580 && CursorPos.y <= 610)
+			{
+				SaveGame();
 				PostQuitMessage(0);	
 			}
 		}
@@ -740,17 +822,18 @@ void CGameApp::ProcessMenuButtons()
 //-----------------------------------------------------------------------------
 void CGameApp::AnimateObjects()
 {
-	m_pPlayer->Update(m_Timer.GetTimeElapsed());
+	m_pPlayer->Update(m_Timer.GetTimeElapsed(),AnimationID);
 
-	for (int index = 0; index < MAX_NPCS; index++)
-			if (m_pNPC[index] != NULL)
-				m_pNPC[index]->UpdateNPC(m_Timer.GetTimeElapsed());
+	for (int index = 0; index < m_pNPC.size(); index++)
+		if (m_pNPC[index] != NULL)
+			m_pNPC[index]->UpdateNPC(m_Timer.GetTimeElapsed());
 
 	for (int index = 0; index < MAX_CRATE; index++)
 		m_pCratesAndBombs[index]->UpdateObj(m_Timer.GetTimeElapsed());
 
-	if (m_pBomb != NULL)
-		m_pBomb->UpdateBomb(m_Timer.GetTimeElapsed());
+	for (int index = 0; index < m_pBomb.size(); index++)
+		if (m_pBomb[index] != NULL)
+			m_pBomb[index]->UpdateBomb(m_Timer.GetTimeElapsed());
 }
 
 //-----------------------------------------------------------------------------
@@ -766,6 +849,13 @@ void CGameApp::DrawObjects()
 	{
 		// Afisam menu principal
 		m_MMenu->Draw();
+
+		if (m_HighMenu != NULL && m_HighMenu->m_ActiveScore)
+		{
+			m_HighMenu->Draw();
+			//TextOut(m_pBBuffer->getDC(), 360, 360, BestScores.top(), strlen(FrameRate));
+			BestScores.pop();
+		}
 	}
 	else
 	{
@@ -774,15 +864,17 @@ void CGameApp::DrawObjects()
 		if ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) // Levele principale + level test
 		{
 			// Desenam bomba, daca aceasta a fost creata
-			if (m_pBomb != NULL)
-				m_pBomb->DrawBomb();
+			for (int index = 0; index < m_pBomb.size(); index++)
+				if (m_pBomb[index] != NULL)
+					m_pBomb[index]->DrawBomb();
 
 			// Desenam NPC-urile
-			for (int index = 0; index < MAX_NPCS; index++)
+			for (int index = 0; index < m_pNPC.size(); index++)
 				if (m_pNPC[index] != NULL)
 					m_pNPC[index]->DrawNPC();
 
-			m_Map->GeneratePortal(); // Generare portal random pe harta
+			if (m_Map->GetPortal()->isSpriteVisible)
+				m_Map->GeneratePortal(); // Generare portal random pe harta
 			m_Map->Draw(0,0); // Desenare harta
 
 			// Generam pozitii random pentru NPC pe harta, daca este cazul
@@ -798,10 +890,10 @@ void CGameApp::DrawObjects()
 		}
 		else if (m_LoadGameLevel == BOSS_LEVEL) // Level boss
 		{
-
+			m_BossMap->Draw(0,0); // Desenare harta bonus
 		}
 
-		m_pPlayer->Draw();
+		m_pPlayer->Draw(AnimationID);
 
 		// Afisam menu secundar
 		m_SMenu->Draw();
@@ -813,6 +905,7 @@ void CGameApp::DrawObjects()
 	// Daca jucatorul a murit
 	if (m_pPlayer != NULL && m_pPlayer->get_if_is_dead() == true)
 	{
+		SaveGame();
 		PostQuitMessage(0);
 		//OR 	ReleaseObjects ( );	 AND return to main menu
 	}
@@ -826,48 +919,67 @@ void CGameApp::DrawObjects()
 //-----------------------------------------------------------------------------
 void CGameApp::CheckBombs()
 {
-	static int BombTimer; // Cronometram cat timp s-a scurs de cand a fost plasata bomba
-	
-	if (m_pBomb != NULL)
+	//static int BombTimer; // Cronometram cat timp s-a scurs de cand a fost plasata bomba
+	  
+	for (int index = 0; index < m_pBomb.size(); index++)
 	{
-		// Daca bomba a fost activata, atunci crestem cronometrul
-		if (m_pBomb->m_BombIsActive)
+		if (m_pBomb[index] != NULL)
 		{
-			BombTimer++;
-		}
-
-		// Daca cronometrul a ajuns la timpul stabilit de BOMB_TIMER aceasta poate exploda
-		if (BombTimer == BOMB_TIMER)
-		{
-			SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
-			m_pBomb->BombExplode(m_Map);
-			BombTimer = 0;
-
-			// Verificare coliziuni [explozie - NPC - jucator]
-			for (int indexBomb = 0; indexBomb < EXPLOSION_RANGE; indexBomb++)
+			// Daca bomba a fost activata, atunci crestem cronometrul
+			if (m_pBomb[index]->m_BombIsActive)
 			{
-				// Daca (pozitia jucatorului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre [jucator - explozie]
-				if ((abs(m_pPlayer->Position().x - m_pBomb->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pPlayer->Position().y - m_pBomb->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune jucator & explozie
-				{
-					// Setam ca jucatorul a murit
-					m_pPlayer->ResetPosition = true;
-					m_pPlayer->get_m_pLives().back()->removed = true;
-					m_pPlayer->Killed();
-					break;
-				}
+				m_pBomb[index]->m_BombTimer++;
+			}
 
-				for (int indexNPC = 0; indexNPC < MAX_NPCS; indexNPC++)
+			// Daca cronometrul a ajuns la timpul stabilit de BOMB_TIMER aceasta poate exploda
+			if (m_pBomb[index]->m_BombTimer == BOMB_TIMER)
+			{
+				SetTimer(m_hWnd, 1, EXPLOSION_SPEED, NULL);
+				m_pBomb[index]->BombExplode(m_Map);
+				m_pBomb[index]->m_BombTimer = 0;
+
+				// Verificare coliziuni [explozie - NPC - jucator]
+				for (int indexBomb = 0; indexBomb < m_pBomb[index]->m_BombExplosionRange; indexBomb++)
 				{
-					if (m_pNPC[indexNPC] != NULL)
+					// Daca (pozitia jucatorului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre [jucator - explozie]
+					if ((abs(m_pPlayer->Position(AnimationID).x - m_pBomb[index]->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pPlayer->Position(AnimationID).y - m_pBomb[index]->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune jucator & explozie
 					{
-						// Daca (pozitia NPC-ului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre [NPC - explozie]
-						if ((abs(m_pNPC[indexNPC]->NPCPosition().x - m_pBomb->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pNPC[indexNPC]->NPCPosition().y - m_pBomb->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune NPC & explozie
+						// Setam ca jucatorul a murit
+						m_pPlayer->ResetPosition = true;
+						m_pPlayer->get_m_pLives().back()->removed = true;
+						m_pPlayer->Killed();
+						break;
+					}
+
+					for (int indexNPC = 0; indexNPC < m_pNPC.size(); indexNPC++)
+					{
+						if (m_pNPC[indexNPC] != NULL)
 						{
-							// Stergem NPC din memorie
-							delete m_pNPC[indexNPC];
-							m_pNPC[indexNPC] = NULL;
-							m_pPlayer->m_pPoints += rand() % 50 + 20;
+							// Daca (pozitia NPC-ului - pozitia exploziei) este mai mica de BLOCKSIZE, atunci avem coliziune intre [NPC - explozie]
+							if ((abs(m_pNPC[indexNPC]->NPCPosition().x - m_pBomb[index]->BombExplosionPosition(indexBomb).x) < BLOCKSIZE-5 && abs(m_pNPC[indexNPC]->NPCPosition().y - m_pBomb[index]->BombExplosionPosition(indexBomb).y) < BLOCKSIZE-5)) // coliziune NPC & explozie
+							{
+								// Stergem NPC din memorie
+								delete m_pNPC[indexNPC];
+								m_pNPC[indexNPC] = NULL;
+								m_pNPC.erase(m_pNPC.begin() + indexNPC);
+								m_pPlayer->m_pPoints += rand() % 50 + 20;
+							}
 						}
+					}
+
+					// Daca toti inamicii au murit, trecem la nivelul urmator
+					if (m_pNPC.empty())
+					{
+						ReleaseObjects();
+
+						m_LoadGameLevel++;
+
+						if (m_LoadGameLevel > MAX_LEVELS)
+							m_LoadGameLevel = BOSS_LEVEL;
+
+						BuildObjects();
+
+						SetupGameState();
 					}
 				}
 			}
@@ -884,7 +996,7 @@ void CGameApp::NPCStartingPosition()
 {
 	int i, j;
 
-	for (int indexNPC = 0; indexNPC < MAX_NPCS; indexNPC++)
+	for (int indexNPC = 0; indexNPC < m_pNPC.size(); indexNPC++)
 	{
 		for (int id = 0; id < 3; id++)
 		{
@@ -905,8 +1017,8 @@ void CGameApp::NPCStartingPosition()
 							j = rand() % m_Map->m_MapMatrix[i].size() + 0;
 
 							// Daca (viitoarea pozitie a NPC-ului - pozitia jucatorului) este mai mare sau egala decat NPC_SPAWN_DISTANCE
-							if (abs(m_pPlayer->Position().x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
-								&& abs(m_pPlayer->Position().y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
+							if (abs(m_pPlayer->Position(AnimationID).x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
+								&& abs(m_pPlayer->Position(AnimationID).y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
 							{
 								// Setam coordonatele random pentru pozitia jucatorului, dar si cea veche si decalata
 								m_pNPC[indexNPC]->NPCPosition().x = m_pNPC[indexNPC]->NPCOldPosition().x = m_pNPC[indexNPC]->NPCDecalPosition().x = j * BLOCKSIZE + BLOCKSIZE / 2;
@@ -927,8 +1039,8 @@ void CGameApp::NPCStartingPosition()
 							i = rand() % m_Map->m_MapMatrix.size() + 0;
 							j = rand() % m_Map->m_MapMatrix[i].size() + 0;
 
-							if (abs(m_pPlayer->Position().x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
-								&& abs(m_pPlayer->Position().y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
+							if (abs(m_pPlayer->Position(AnimationID).x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
+								&& abs(m_pPlayer->Position(AnimationID).y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
 							{
 								m_pNPC[indexNPC]->NPCPosition().x = m_pNPC[indexNPC]->NPCOldPosition().x = m_pNPC[indexNPC]->NPCDecalPosition().x = j * BLOCKSIZE + BLOCKSIZE / 2;
 								m_pNPC[indexNPC]->NPCPosition().y = m_pNPC[indexNPC]->NPCOldPosition().y = m_pNPC[indexNPC]->NPCDecalPosition().y = i * BLOCKSIZE + BLOCKSIZE / 2;
@@ -947,8 +1059,8 @@ void CGameApp::NPCStartingPosition()
 							i = rand() % m_Map->m_MapMatrix.size() + 0;
 							j = rand() % m_Map->m_MapMatrix[i].size() + 0;
 
-							if (abs(m_pPlayer->Position().x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
-								&& abs(m_pPlayer->Position().y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
+							if (abs(m_pPlayer->Position(AnimationID).x - j * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE 
+								&& abs(m_pPlayer->Position(AnimationID).y - i * BLOCKSIZE + BLOCKSIZE / 2) >= NPC_SPAWN_DISTANCE)
 							{
 								m_pNPC[indexNPC]->NPCPosition().x = m_pNPC[indexNPC]->NPCOldPosition().x = m_pNPC[indexNPC]->NPCDecalPosition().x = j * BLOCKSIZE + BLOCKSIZE / 2;
 								m_pNPC[indexNPC]->NPCPosition().y = m_pNPC[indexNPC]->NPCOldPosition().y = m_pNPC[indexNPC]->NPCDecalPosition().y = i * BLOCKSIZE + BLOCKSIZE / 2;
@@ -969,28 +1081,67 @@ void CGameApp::NPCStartingPosition()
 //-----------------------------------------------------------------------------
 void CGameApp::CheckPositions()
 {
-	// Daca pozitia jucatorului este egala cu cea a portalului si nu ne aflam intr-un nivel bonus/boss si portalul este vizibil
-	if ( m_pPlayer->Position() == m_Map->PortalPosition() 
-		&& ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) 
-		&& m_Map->isPortalVisible()
-		)
+	if (m_Map)
 	{
-		// Selectam un nivel bonus random
-		//int selectBonusLevel = rand() % BONUS_LEVEL2 + BONUS_LEVEL1;
-		int selectBonusLevel = BONUS_LEVEL1;
+		// Daca pozitia jucatorului este egala cu cea a portalului si nu ne aflam intr-un nivel bonus/boss si portalul este vizibil
+		if ( m_pPlayer->Position(AnimationID) == m_Map->PortalPosition() 
+			&& ( (m_LoadGameLevel >= 1 || m_LoadGameLevel == TEST_LEVEL) && m_LoadGameLevel != BOSS_LEVEL) 
+			&& m_Map->isPortalVisible()
+			)
+		{
+			// Selectam un nivel bonus random
+			//int selectBonusLevel = rand() % BONUS_LEVEL2 + BONUS_LEVEL1;
+			int selectBonusLevel = BONUS_LEVEL1;
 
-		// Setam portalul ca fiind invizibil
-		m_Map->isPortalVisible() = false;
+			// Setam portalul ca fiind invizibil
+			m_Map->isPortalVisible() = false;
 
-		// Setam ca ne aflam in nivelul bonus ales random
-		m_LoadGameLevel = selectBonusLevel;
+			// Setam ca ne aflam in nivelul bonus ales random
+			m_LoadGameLevel = selectBonusLevel;
 
-		// Incarcam harta si background
-		LoadLevel();
+			// Incarcam harta si background
+			LoadLevel();
 
-		// Pozitionam jucatorul 
-		SetupGameState();
+			// Pozitionam jucatorul 
+			SetupGameState();
+		}
 	}
+}
+
+void CGameApp::SaveGame()
+{
+	if (m_pPlayer != NULL && SavedPlayerPoints != 0)
+	{
+		ofstream f("data/scores.data", ofstream::out);
+
+		BestScores.push(SavedPlayerPoints);
+
+		while (!BestScores.empty())
+		{
+			f << BestScores.top();
+			BestScores.pop();
+			if (!BestScores.empty())
+				f << endl;
+		}
+
+		f.close();
+	}
+}
+
+void CGameApp::LoadGame()
+{
+	ifstream f("data/scores.data", ifstream::in);
+	int x;
+
+	while (!f.eof())
+	{
+		f >> x;
+
+		if (x != 0 && x > 0)
+			BestScores.push(x);
+	}
+	
+	f.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -1015,34 +1166,34 @@ void CGameApp::DrawInfo()
 		TextOut(m_pBBuffer->getDC(), 10, 10, FrameRate, strlen(FrameRate));
 
 		strcpy(DisplayInfo,"Player Real Pos X: "); // Copiem in PlayerXY: "Player Real Pos X:"
-		itoa(m_pPlayer->Position().x,ConvToString,10); // Convertim pozitia jucatorului pe X, din (int) in (char)
+		itoa( (m_pPlayer != NULL ? m_pPlayer->Position(AnimationID).x : 0), ConvToString,10); // Convertim pozitia jucatorului pe X, din (int) in (char)
 		strcat(DisplayInfo,ConvToString); // Adaugam pozitia in PlayerXY: "Player Real Pos X: %d"
 		strcat(DisplayInfo,", Y: "); // Adaugam in PlayerXY: "Player Real Pos X: %d, Y:"
-		itoa(m_pPlayer->Position().y,ConvToString,10); // Convertim pozitia jucatorului pe Y, din (int) in (char)
+		itoa( (m_pPlayer != NULL ? m_pPlayer->Position(AnimationID).y : 0), ConvToString,10); // Convertim pozitia jucatorului pe Y, din (int) in (char)
 		strcat(DisplayInfo,ConvToString); //  Adaugam pozitia in PlayerXY: "Player Real Pos X: %d, Y: %d"
 		TextOut(m_pBBuffer->getDC(), 10, 50, DisplayInfo, strlen(DisplayInfo)); // Afisam PlayerXY pe ecran
 
 		strcpy(DisplayInfo,"Player Dec Pos X: ");
-		itoa(m_pPlayer->PlayerDecalPos().x,ConvToString,10);
+		itoa( (m_pPlayer != NULL ? m_pPlayer->PlayerDecalPos(AnimationID).x : 0), ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		strcat(DisplayInfo,", Y: ");
-		itoa(m_pPlayer->PlayerDecalPos().y,ConvToString,10);
+		itoa( (m_pPlayer != NULL ? m_pPlayer->PlayerDecalPos(AnimationID).y : 0), ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		TextOut(m_pBBuffer->getDC(), 10, 80, DisplayInfo, strlen(DisplayInfo));
 
 		strcpy(DisplayInfo,"Player Old Pos X: ");
-		itoa(m_pPlayer->PlayerOldPos().x,ConvToString,10);
+		itoa( (m_pPlayer != NULL ? m_pPlayer->PlayerOldPos(AnimationID).x : 0), ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		strcat(DisplayInfo,", Y: ");
-		itoa(m_pPlayer->PlayerOldPos().y,ConvToString,10);
+		itoa( (m_pPlayer != NULL ? m_pPlayer->PlayerOldPos(AnimationID).y : 0), ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		TextOut(m_pBBuffer->getDC(), 10, 110, DisplayInfo, strlen(DisplayInfo));
 
 		strcpy(DisplayInfo,"Player Vel X: ");
-		itoa(m_pPlayer->Velocity().x,ConvToString,10);
+		itoa( (m_pPlayer != NULL ? m_pPlayer->Velocity(AnimationID).x : 0), ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		strcat(DisplayInfo,", Y: ");
-		itoa(m_pPlayer->Velocity().y,ConvToString,10);
+		itoa( (m_pPlayer != NULL ? m_pPlayer->Velocity(AnimationID).y : 0), ConvToString,10);
 		strcat(DisplayInfo,ConvToString);
 		TextOut(m_pBBuffer->getDC(), 10, 140, DisplayInfo, strlen(DisplayInfo));
 
@@ -1056,22 +1207,22 @@ void CGameApp::DrawInfo()
 		TextOut(m_pBBuffer->getDC(), 10, 170, DisplayInfo, strlen(DisplayInfo));
 	}
 
-	//if ( !m_MMenu->m_Active)
-	//{
-	//	hFont = CreateFont(35, 0, 0, 0, FW_EXTRABOLD, 0, 0, 0, 0, 0, 0, 4, 0, "SYSTEM_FIXED_FONT");
-	//	SetTextColor(m_pBBuffer->getDC(), 0x00FFFFFF);
-	//	SetBkMode(m_pBBuffer->getDC(), TRANSPARENT);
+	if ( !m_MMenu->m_Active)
+	{
+		hFont = CreateFont(35, 0, 0, 0, FW_EXTRABOLD, 0, 0, 0, 0, 0, 0, 4, 0, "SYSTEM_FIXED_FONT");
+		SetTextColor(m_pBBuffer->getDC(), 0x00FFFFFF);
+		SetBkMode(m_pBBuffer->getDC(), TRANSPARENT);
 
-	//	// Select the variable stock font into the specified device context. 
-	//	hOldFont = (HFONT)SelectObject(m_pBBuffer->getDC(), hFont);
+		// Select the variable stock font into the specified device context. 
+		hOldFont = (HFONT)SelectObject(m_pBBuffer->getDC(), hFont);
 
-	//	if (m_pPlayer != NULL)
-	//	{
-	//		strcpy(DisplayInfo,"Puncte: ");
-	//		itoa(m_pPlayer->m_pPoints,ConvToString,10);
-	//		strcat(DisplayInfo,ConvToString);
-	//		TextOut(m_pBBuffer->getDC(), 70, 15, DisplayInfo, strlen(DisplayInfo));
-	//	}
-	//	SelectObject(m_pBBuffer->getDC(), hOldFont);
-	//}
+		if (m_pPlayer != NULL)
+		{
+			strcpy(DisplayInfo,"Puncte: ");
+			itoa(m_pPlayer->m_pPoints,ConvToString,10);
+			strcat(DisplayInfo,ConvToString);
+			TextOut(m_pBBuffer->getDC(), 70, 15, DisplayInfo, strlen(DisplayInfo));
+		}
+		//SelectObject(m_pBBuffer->getDC(), hOldFont);
+	}
 }

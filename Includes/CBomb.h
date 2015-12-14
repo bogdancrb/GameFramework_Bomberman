@@ -48,6 +48,7 @@ public:
 
 	void					BombExplode(CMap* Map, int ID = 0);
 	bool					BombAdvanceExplosion();
+	bool					BombAdvancePlacement();
 
 	bool					BombColision(Vec2 Position, CMap* Map);
 
@@ -58,7 +59,8 @@ private:
 	//-------------------------------------------------------------------------
 	// Private Variables for This Class.
 	//-------------------------------------------------------------------------
-	Sprite*					m_pBombSprite;
+	AnimatedSprite*			m_pBombSprite;
+	int						m_iBombSpriteFrame;
 
 	bool					m_bBombExplosion;
 	AnimatedSprite*			m_pBombExplosionSprite[EXPLOSION_RANGE];
@@ -69,6 +71,8 @@ public:
 	// Keep these public because they need to be modified externally.
 	//-------------------------------------------------------------------------
 	bool					m_BombIsActive;
+	int						m_BombTimer;
+	int						m_BombExplosionRange;
 };
 
 #endif // _CBOMB_H_
